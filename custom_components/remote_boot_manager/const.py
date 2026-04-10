@@ -1,8 +1,8 @@
-"""Constants for integration_blueprint."""
+"""Constants for remote_boot_manager."""
 
 from logging import Logger, getLogger
 
 LOGGER: Logger = getLogger(__package__)
 
-DOMAIN = "integration_blueprint"
+DOMAIN = "remote_boot_manager"
 ATTRIBUTION = "Data provided by http://jsonplaceholder.typicode.com/"
