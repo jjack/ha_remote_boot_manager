@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.core import callback
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.device_registry import (
-    DeviceInfo,
     CONNECTION_NETWORK_MAC,
+    DeviceInfo,
 )
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import DEFAULT_OS_NONE, DOMAIN, LOGGER
