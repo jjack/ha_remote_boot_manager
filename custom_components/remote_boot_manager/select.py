@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from homeassistant.components.select import SelectEntity
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import DEFAULT_OS_NONE, DOMAIN, LOGGER
 
@@ -42,7 +43,7 @@ async def async_setup_entry(
     )
 
 
-class RemoteBootManagerSelect(SelectEntity):
+class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
     """remote_boot_manager select class."""
 
     def __init__(self, manager: RemoteBootManager, mac_address: str) -> None:
@@ -80,6 +81,16 @@ class RemoteBootManagerSelect(SelectEntity):
     async def async_added_to_hass(self) -> None:
         """Run when the entity is added to Home Assistant."""
         await super().async_added_to_hass()
+
+        # restore the previous state if HASS restarted
+        last_state = await self.async_get_last_state()
+        if last_state and last_state.state in self.options:
+            LOGGER.debug(
+                "Restoring previous OS state for %s: %s",
+                self.mac_address,
+                last_state.state,
+            )
+            self.manager.async_set_selected_os(self.mac_address, last_state.state)
 
         # Subscribe to manager updates so the UI redraws when webhooks arrive
         self.async_on_remove(self.manager.async_add_listener(self.async_write_ha_state))
