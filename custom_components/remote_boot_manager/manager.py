@@ -25,13 +25,12 @@ class RemoteBootManager:
         self._listeners: list[Callable] = []
 
         """
-        In-memory dict to hold server information, keyed by mac because hostnames
-        can change and may not be unique.
+        In-memory dict to hold server information, keyed by mac to ensure uniqueness
 
           { "mac_address1": {
-              "hostname": "server1",
-              "bootloader": "grub",
-              "os_list": ["ubuntu", "windows"],
+              "name":        "server1",
+              "bootloader":  "grub",
+              "os_list":     ["ubuntu", "windows"],
               "selected_os": "(none)"
           }
         """
@@ -73,6 +72,10 @@ class RemoteBootManager:
         else:
             self.servers[mac_address]["bootloader"] = bootloader
 
+        # add "(none)" option to the front of the list if it's not already there
+        if os_list[0] != DEFAULT_OS_NONE:
+            os_list = [DEFAULT_OS_NONE, *os_list]
+
         self.servers[mac_address]["os_list"] = os_list
 
         # If the selected OS is no longer in the list, reset it
@@ -86,3 +89,27 @@ class RemoteBootManager:
             async_dispatcher_send(self.hass, f"{DOMAIN}_new_server", mac_address)
         else:
             self._notify_listeners()
+
+    @callback
+    def async_set_selected_os(self, mac_address: str, os_name: str) -> None:
+        """Notify listeners that the selected OS has changed."""
+        if mac_address in self.servers:
+            self.servers[mac_address]["selected_os"] = os_name
+            self._notify_listeners()
+            LOGGER.debug("Set selected OS for %s to %s", mac_address, os_name)
+
+    @callback
+    def async_consume_selected_os(self, mac_address: str) -> str:
+        """Retrieve the requested OS and immediately resets the state."""
+        if mac_address not in self.servers:
+            LOGGER.warning("GRUB requested OS for unknown MAC address: %s", mac_address)
+            return DEFAULT_OS_NONE
+
+        # grab the selected OS and reset the state for next boot to prevent boot loops
+        selected_os = self.servers[mac_address]["selected_os"]
+        self.servers[mac_address]["selected_os"] = DEFAULT_OS_NONE
+
+        # Notify UI to revert the dropdown back to "(none)"
+        self._notify_listeners()
+
+        return selected_os
