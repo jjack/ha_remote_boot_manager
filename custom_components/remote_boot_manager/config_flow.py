@@ -35,4 +35,7 @@ class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema({}),
             errors={},
+            description_placeholders={
+                "documentation_url": integration.documentation,
+            },
         )
