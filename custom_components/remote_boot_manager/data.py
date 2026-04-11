@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.loader import Integration
 
-    from .coordinator import RemoteBootManagerDataUpdateCoordinator
+    from .manager import RemoteBootManagerDataUpdateCoordinator
 
 
 type RemoteBootManagerConfigEntry = ConfigEntry[RemoteBootManagerData]

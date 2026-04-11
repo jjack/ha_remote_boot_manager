@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-    from .coordinator import RemoteBootManagerDataUpdateCoordinator
+    from .manager import RemoteBootManagerDataUpdateCoordinator
     from .data import RemoteBootManagerConfigEntry
 
 ENTITY_DESCRIPTIONS = (

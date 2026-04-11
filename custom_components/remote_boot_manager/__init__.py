@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 from homeassistant.const import Platform
 
 from .const import DOMAIN, LOGGER
-from .coordinator import RemoteBootManagerDataUpdateCoordinator
+from .manager import RemoteBootManagerDataUpdateCoordinator
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
