@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from homeassistant.components.select import SelectEntity
+from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.device_registry import (
+    DeviceInfo,
+    CONNECTION_NETWORK_MAC,
+)
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import DEFAULT_OS_NONE, DOMAIN, LOGGER
@@ -17,6 +21,14 @@ if TYPE_CHECKING:
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
     from .manager import RemoteBootManager
+
+ENTITY_DESCRIPTIONS = (
+    SelectEntityDescription(
+        key="remote_boot_manager_select",
+        name="Remote Boot Manager Select",
+        icon="mdi:harddisk",
+    ),
+)
 
 
 async def async_setup_entry(
@@ -55,6 +67,15 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
         self._attr_unique_id = f"{mac_address}_os_select"
         self._attr_name = "Next Boot OS"
         self._attr_has_entity_name = True
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, mac_address)},
+            name=self.manager.servers.get(mac_address, {}).get(
+                "name", "Unknown Server"
+            ),
+            manufacturer="Remote Boot Manager",
+            connections={(CONNECTION_NETWORK_MAC, mac_address)},
+        )
 
     @property
     def options(self) -> list[str]:
