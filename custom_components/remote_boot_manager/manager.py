@@ -28,7 +28,7 @@ class RemoteBootManager:
         In-memory dict to hold server information, keyed by mac to ensure uniqueness
 
           { "mac_address1": {
-              "name":        "server1",
+              "hostname":        "server1",
               "bootloader":  "grub",
               "os_list":     ["ubuntu", "windows"],
               "selected_os": "(none)"
@@ -55,7 +55,7 @@ class RemoteBootManager:
     @callback
     def async_process_webhook_payload(self, mac_address: str, payload: dict) -> None:
         """Process payloads from the bare-metal GO agents."""
-        hostname = payload.get("hostname", "unknown_host")
+        hostname = payload.get("hostname", "unknown_server")
         os_list = payload.get("os_list", [])
         bootloader = payload.get("bootloader", "grub")
 
@@ -91,12 +91,12 @@ class RemoteBootManager:
             self._notify_listeners()
 
     @callback
-    def async_set_selected_os(self, mac_address: str, os_name: str) -> None:
+    def async_set_selected_os(self, mac_address: str, selected_os: str) -> None:
         """Notify listeners that the selected OS has changed."""
         if mac_address in self.servers:
-            self.servers[mac_address]["selected_os"] = os_name
+            self.servers[mac_address]["selected_os"] = selected_os
             self._notify_listeners()
-            LOGGER.debug("Set selected OS for %s to %s", mac_address, os_name)
+            LOGGER.debug("Set selected OS for %s to %s", mac_address, selected_os)
 
     @callback
     def async_consume_selected_os(self, mac_address: str) -> str:
