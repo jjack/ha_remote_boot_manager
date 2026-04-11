@@ -7,13 +7,13 @@ https://github.com/jjack/ha_remote_boot_manager
 
 from __future__ import annotations
 
-from datetime import timedelta
 from typing import TYPE_CHECKING
 
+from aiohttp import web
+from homeassistant.components import webhook
 from homeassistant.const import Platform
 
 from .const import DOMAIN, LOGGER
-from .manager import RemoteBootManagerDataUpdateCoordinator
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -29,21 +29,20 @@ PLATFORMS: list[Platform] = [
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
 async def async_setup_entry(
     hass: HomeAssistant,
+    webook_id: str,
     entry: RemoteBootManagerConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
-    coordinator = RemoteBootManagerDataUpdateCoordinator(
-        hass=hass,
-        logger=LOGGER,
-        name=DOMAIN,
-        update_interval=timedelta(hours=1),
+    # register a webhook at /api/webhook/remote_boot_manager_ingest
+    webhook.async_register(
+        hass,
+        DOMAIN,
+        "Remote Boot Manager Ingest",
+        "remote_boot_manager_ingest",
+        handle_os_ingest_webhook,
     )
 
-    # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
-    await coordinator.async_config_entry_first_refresh()
-
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
 
@@ -62,3 +61,30 @@ async def async_reload_entry(
 ) -> None:
     """Reload config entry."""
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def handle_os_ingest_webhook(
+    hass: HomeAssistant, webhook_id: str, request: web.Request
+) -> web.Response:
+    """Handle incoming OS push requests from bare-metal Go agents."""
+    try:
+        payload = await request.json()
+        mac_address = payload.get("mac_address")
+
+        if not mac_address:
+            LOGGER.warning(
+                "Received remote boot manager push request webhook with no mac_address"
+            )
+            return web.Response(status=400, text="missing mac_address")
+
+        # Find our manager instance from the active config entries
+        for entry in hass.config_entries.async_entries(DOMAIN):
+            if hasattr(entry, "runtime_data") and entry.runtime_data:
+                entry.runtime_data.async_process_webhook_payload(mac_address, payload)
+                break
+
+        return web.Response(status=200, text="OK")
+
+    except Exception as err:
+        LOGGER.error("Failed to process remote boot manager webhook: %s", err)
+        return web.Response(status=400, text="Invalid JSON Payload")
