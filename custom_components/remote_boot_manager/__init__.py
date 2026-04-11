@@ -14,7 +14,6 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.loader import async_get_loaded_integration
 
-from .api import RemoteBootManagerApiClient
 from .const import DOMAIN, LOGGER
 from .coordinator import RemoteBootManagerDataUpdateCoordinator
 from .data import RemoteBootManagerData
@@ -42,15 +41,6 @@ async def async_setup_entry(
         logger=LOGGER,
         name=DOMAIN,
         update_interval=timedelta(hours=1),
-    )
-    entry.runtime_data = RemoteBootManagerData(
-        client=RemoteBootManagerApiClient(
-            username=entry.data[CONF_USERNAME],
-            password=entry.data[CONF_PASSWORD],
-            session=async_get_clientsession(hass),
-        ),
-        integration=async_get_loaded_integration(hass, entry.domain),
-        coordinator=coordinator,
     )
 
     # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
