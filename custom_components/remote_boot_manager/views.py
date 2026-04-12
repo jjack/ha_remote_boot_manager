@@ -50,7 +50,11 @@ class BootloaderView(HomeAssistantView):
 
         # Call the appropriate bootloader instance to generate the response
         try:
-            return bootloader.generate_boot_config(self.manager.servers[mac_address])
+            server_copy = server.copy()
+            server_copy["selected_os"] = self.manager.async_consume_selected_os(
+                mac_address
+            )
+            return bootloader.generate_boot_config(server_copy)
         except Exception as err:
             LOGGER.error("Error generating boot config for %s: %s", mac_address, err)
             return web.json_response({"error": "Internal Server Error"}, status=500)
