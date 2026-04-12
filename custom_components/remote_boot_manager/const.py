@@ -5,7 +5,6 @@ from logging import Logger, getLogger
 LOGGER: Logger = getLogger(__package__)
 
 DOMAIN = "remote_boot_manager"
-ATTRIBUTION = "Data provided by http://jsonplaceholder.typicode.com/"
 
 DEFAULT_OS_NONE = "(none)"
 
