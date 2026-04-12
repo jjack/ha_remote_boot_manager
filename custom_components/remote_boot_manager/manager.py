@@ -76,18 +76,15 @@ class RemoteBootManager:
         os_list = payload.get("os_list", [])
         bootloader = payload.get("bootloader", "grub")
 
-        is_new_server = mac_address not in self.servers
-
-        if is_new_server:
+        if mac_address not in self.servers:
             LOGGER.info("Discovered new server: %s (%s)", hostname, mac_address)
-            self.servers[mac_address] = {
-                "hostname": hostname,
-                "bootloader": bootloader,
-                "os_list": [],
-                "selected_os": DEFAULT_OS_NONE,
-            }
-        else:
-            self.servers[mac_address]["bootloader"] = bootloader
+
+        self.servers[mac_address] = {
+            "hostname": hostname,
+            "bootloader": bootloader,
+            "os_list": [],
+            "selected_os": DEFAULT_OS_NONE,
+        }
 
         # add "(none)" option to the front of the list if it's not already there
         if os_list and os_list[0] != DEFAULT_OS_NONE:
