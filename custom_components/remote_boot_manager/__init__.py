@@ -83,7 +83,7 @@ async def handle_os_ingest_webhook(
             return web.Response(status=400, text="empty body")
 
         payload = await request.json()
-        LOGGER.debug("Received remote boot manager webhook with payload: %s", request)
+        LOGGER.debug("Received remote boot manager webhook with payload: %s", payload)
         mac_address = payload.get("mac_address")
 
         if not mac_address:
