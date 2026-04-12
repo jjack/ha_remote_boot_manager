@@ -46,7 +46,10 @@ async def async_setup_entry(
         handle_os_ingest_webhook,
     )
     # Register the unauthenticated bootloader view API
-    hass.http.register_view(BootloaderView(manager))
+    if not hass.data.get(DOMAIN, {}).get("view_registered"):
+        hass.data.setdefault(DOMAIN, {})["view_registered"] = True
+        hass.http.register_view(BootloaderView())
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
