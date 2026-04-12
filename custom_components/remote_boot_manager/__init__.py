@@ -15,6 +15,7 @@ from homeassistant.const import Platform
 
 from .const import DOMAIN, LOGGER
 from .manager import RemoteBootManager
+from .views import BootloaderView
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -44,7 +45,8 @@ async def async_setup_entry(
         "remote_boot_manager_ingest",
         handle_os_ingest_webhook,
     )
-
+    # Register the unauthenticated bootloader view API
+    hass.http.register_view(BootloaderView(manager))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
