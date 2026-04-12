@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from aiohttp import web
+from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.http import HomeAssistantView
 
 from .bootloaders import get_bootloader
@@ -33,6 +34,7 @@ class BootloaderView(HomeAssistantView):
     async def get(self, request: web.Request, mac_address: str) -> web.Response:
         """Handle GET requests for a specific server's boot configuration."""
         hass = request.app["hass"]
+        mac_address = format_mac(mac_address)
 
         # Find our manager instance from the active config entries
         manager = None
