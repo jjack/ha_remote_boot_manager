@@ -15,7 +15,7 @@ class GrubBootloader(BootloaderBase):
 
     name = "grub"
 
-    def get_boot_config(self, server: dict[str, Any]) -> web.Response:
+    def generate_boot_config(self, server: dict[str, Any]) -> web.Response:
         """Generate the GRUB boot configuration response."""
 
         selected_os = server.get("selected_os", "(none)")
