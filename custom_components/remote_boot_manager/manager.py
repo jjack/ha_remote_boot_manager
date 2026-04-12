@@ -78,13 +78,22 @@ class RemoteBootManager:
 
         is_new_server = mac_address not in self.servers
         if is_new_server:
+            selected_os = DEFAULT_OS_NONE
             LOGGER.info("Discovered new server: %s (%s)", hostname, mac_address)
+        else:
+            selected_os = self.servers[mac_address].get("selected_os", DEFAULT_OS_NONE)
+            LOGGER.info(
+                "Received update for server: %s (%s) - OS list: %s",
+                hostname,
+                mac_address,
+                os_list,
+            )
 
         self.servers[mac_address] = {
             "hostname": hostname,
             "bootloader": bootloader,
             "os_list": [],
-            "selected_os": DEFAULT_OS_NONE,
+            "selected_os": selected_os,
         }
 
         # add "(none)" option to the front of the list if it's not already there
