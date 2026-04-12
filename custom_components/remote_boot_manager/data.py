@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry
 
+if TYPE_CHECKING:
     from .manager import RemoteBootManager
 
-
-type RemoteBootManagerConfigEntry = ConfigEntry[RemoteBootManager]
+type RemoteBootManagerConfigEntry = ConfigEntry["RemoteBootManager"]
