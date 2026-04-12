@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from aiohttp import web
 from homeassistant.components import webhook
 from homeassistant.const import Platform
+from homeassistant.helpers.device_registry import format_mac
 
 from .const import DOMAIN, LOGGER, WEBHOOK_ID, WEBHOOK_NAME
 from .manager import RemoteBootManager
@@ -96,7 +97,10 @@ async def handle_os_ingest_webhook(
             )
             return web.Response(status=400, text="missing mac_address")
 
+        mac_address = format_mac(mac_address)
+
         # Find our manager instance from the active config entries
+        manager_found = False
         for entry in hass.config_entries.async_entries(DOMAIN):
             LOGGER.debug(
                 "Checking config entry %s for webhook payload processing",
@@ -104,7 +108,11 @@ async def handle_os_ingest_webhook(
             )
             if hasattr(entry, "runtime_data") and entry.runtime_data:
                 entry.runtime_data.async_process_webhook_payload(mac_address, payload)
+                manager_found = True
                 break
+
+        if not manager_found:
+            return web.Response(status=503, text="Integration not ready")
 
         return web.Response(status=200, text="OK")
     except Exception as err:
