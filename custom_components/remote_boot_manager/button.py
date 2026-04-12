@@ -5,17 +5,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import wakeonlan
-
 from homeassistant.components.button import (
     ButtonDeviceClass,
     ButtonEntity,
     ButtonEntityDescription,
 )
 from homeassistant.core import callback
-from homeassistant.helpers.device_registry import (
-    CONNECTION_NETWORK_MAC,
-    DeviceInfo,
-)
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .const import DOMAIN

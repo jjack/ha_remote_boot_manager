@@ -12,8 +12,8 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-    from .manager import RemoteBootManagerDataUpdateCoordinator
     from .data import RemoteBootManagerConfigEntry
+    from .manager import RemoteBootManagerDataUpdateCoordinator
 
 ENTITY_DESCRIPTIONS = (
     SensorEntityDescription(
