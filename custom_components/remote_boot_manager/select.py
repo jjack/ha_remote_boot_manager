@@ -71,7 +71,7 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, mac_address)},
             name=self.manager.servers.get(mac_address, {}).get(
-                "name", "Unknown Server"
+                "hostname", "Unknown Server"
             ),
             manufacturer="Remote Boot Manager",
             connections={(CONNECTION_NETWORK_MAC, mac_address)},
