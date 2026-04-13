@@ -13,7 +13,7 @@ from homeassistant.helpers.device_registry import (
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import DEFAULT_OS_NONE, DOMAIN, LOGGER
+from .const import DEFAULT_OS_NONE, DOMAIN, LOGGER, SIGNAL_NEW_SERVER
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -51,7 +51,7 @@ async def async_setup_entry(
 
     # Listen for the signal to add new servers discovered via webhook
     entry.async_on_unload(
-        async_dispatcher_connect(hass, f"{DOMAIN}_new_server", async_add_server_select)
+        async_dispatcher_connect(hass, SIGNAL_NEW_SERVER, async_add_server_select)
     )
 
 

@@ -14,7 +14,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-from .const import DOMAIN
+from .const import DOMAIN, SIGNAL_NEW_SERVER
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -53,7 +53,7 @@ async def async_setup_entry(
 
     # Listen for the signal to add new servers discovered via webhook
     entry.async_on_unload(
-        async_dispatcher_connect(hass, f"{DOMAIN}_new_server", async_add_server_select)
+        async_dispatcher_connect(hass, SIGNAL_NEW_SERVER, async_add_server_select)
     )
 
 

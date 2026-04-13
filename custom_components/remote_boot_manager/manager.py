@@ -9,7 +9,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.storage import Store
 
-from .const import DEFAULT_OS_NONE, DOMAIN, LOGGER
+from .const import DEFAULT_OS_NONE, DOMAIN, LOGGER, SIGNAL_NEW_SERVER
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -125,7 +125,7 @@ class RemoteBootManager:
             self.servers[mac_address]["selected_os"] = DEFAULT_OS_NONE
 
         if is_new_server:
-            async_dispatcher_send(self.hass, f"{DOMAIN}_new_server", mac_address)
+            async_dispatcher_send(self.hass, SIGNAL_NEW_SERVER, mac_address)
         else:
             self._notify_listeners()
 
