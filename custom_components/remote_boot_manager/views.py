@@ -8,7 +8,7 @@ from aiohttp import web
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.http import HomeAssistantView
 
-from .bootloaders import get_bootloader
+from .bootloaders import async_get_bootloader
 from .const import BOOTLOADER_VIEW_URL, DOMAIN
 
 LOGGER = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class BootloaderView(HomeAssistantView):
             return web.json_response({"error": "Server not found"}, status=404)
 
         bootloader_name = server.get("bootloader", "")
-        bootloader = get_bootloader(bootloader_name)
+        bootloader = await async_get_bootloader(hass, bootloader_name)
         if not bootloader:
             LOGGER.error(
                 "Bootloader module %s not found for %s", bootloader_name, mac_address

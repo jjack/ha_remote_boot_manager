@@ -32,11 +32,16 @@ def register_bootloader(bootloader_cls: type[BootloaderBase]) -> type[Bootloader
     return bootloader_cls
 
 
-def get_bootloader(name: str) -> BootloaderBase | None:
+def _load_bootloader_module(name: str) -> None:
+    """Load a bootloader module synchronously."""
+    importlib.import_module(f".{name}", __package__)
+
+
+async def async_get_bootloader(hass: Any, name: str) -> BootloaderBase | None:
     """Get a bootloader instance by name."""
     if name not in _BOOTLOADERS:
         try:
-            importlib.import_module(f".{name}", __package__)
+            await hass.async_add_executor_job(_load_bootloader_module, name)
         except ImportError:
             LOGGER.exception("Failed to load bootloader %s", name)
             return None
