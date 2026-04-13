@@ -29,6 +29,10 @@ class BootloaderView(HomeAssistantView):
         """Handle GET requests for a specific server's boot configuration."""
         hass = request.app["hass"]
         mac_address = format_mac(mac_address)
+        if not mac_address:
+            return web.json_response(
+                {"error": "Invalid MAC address format"}, status=400
+            )
 
         # Find our manager instance from the active config entries
         manager = None
