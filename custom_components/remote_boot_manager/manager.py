@@ -9,7 +9,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.storage import Store
 
-from .const import DEFAULT_OS_NONE, DOMAIN, LOGGER, SIGNAL_NEW_SERVER
+from .const import DEFAULT_OS_NONE, DOMAIN, LOGGER, SAVE_DELAY, SIGNAL_NEW_SERVER
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -47,7 +47,7 @@ class RemoteBootManager:
 
     def _save(self) -> None:
         """Save data to storage."""
-        self._store.async_delay_save(self._data_to_save, 1.0)
+        self._store.async_delay_save(self._data_to_save, SAVE_DELAY)
 
     @callback
     def _data_to_save(self) -> dict[str, Any]:
@@ -73,9 +73,9 @@ class RemoteBootManager:
     @callback
     def async_process_webhook_payload(self, mac_address: str, payload: dict) -> None:
         """Process payloads from the bare-metal GO agents."""
-        hostname = payload.get("hostname", "unknown_server")
-        os_list = payload.get("os_list", [])
-        bootloader = payload.get("bootloader", "grub")
+        hostname = payload["hostname"]
+        os_list = payload["os_list"]
+        bootloader = payload["bootloader"]
 
         is_new_server = mac_address not in self.servers
         if is_new_server:
@@ -83,7 +83,7 @@ class RemoteBootManager:
             LOGGER.info("Discovered new server: %s (%s)", hostname, mac_address)
         else:
             selected_os = self.servers[mac_address].get("selected_os", DEFAULT_OS_NONE)
-            old_hostname = self.servers[mac_address].get("hostname", "unknown_server")
+            old_hostname = self.servers[mac_address]["hostname"]
 
             # Update the HA device registry so the entity name updates in the UI
             if old_hostname != hostname:
