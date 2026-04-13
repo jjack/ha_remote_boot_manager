@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
 
 from aiohttp import web
 from homeassistant.helpers.device_registry import format_mac
@@ -11,10 +10,6 @@ from homeassistant.helpers.http import HomeAssistantView
 
 from .bootloaders import get_bootloader
 from .const import BOOTLOADER_VIEW_URL, DOMAIN
-
-if TYPE_CHECKING:
-    from .manager import RemoteBootManager
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -29,7 +24,6 @@ class BootloaderView(HomeAssistantView):
 
     def __init__(self) -> None:
         """Initialize."""
-        pass
 
     async def get(self, request: web.Request, mac_address: str) -> web.Response:
         """Handle GET requests for a specific server's boot configuration."""
@@ -67,6 +61,6 @@ class BootloaderView(HomeAssistantView):
             server_copy = server.copy()
             server_copy["selected_os"] = manager.async_consume_selected_os(mac_address)
             return bootloader.generate_boot_config(server_copy)
-        except Exception as err:
-            LOGGER.error("Error generating boot config for %s: %s", mac_address, err)
+        except Exception:
+            LOGGER.exception("Error generating boot config for %s", mac_address)
             return web.json_response({"error": "Internal Server Error"}, status=500)

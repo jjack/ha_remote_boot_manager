@@ -17,9 +17,8 @@ class GrubBootloader(BootloaderBase):
 
     def generate_boot_config(self, server: dict[str, Any]) -> web.Response:
         """Generate the GRUB boot configuration response."""
-
         selected_os = server.get("selected_os", "(none)")
-        if selected_os != "(none)":
+        if selected_os != "(none)":  # noqa: SIM108
             content = f"set defaults='{selected_os}'\n"
         else:
             # returning nothing causes GRUB to fall back to its default behavior

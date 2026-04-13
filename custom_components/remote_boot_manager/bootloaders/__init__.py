@@ -7,8 +7,6 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from aiohttp import web
 
 LOGGER = logging.getLogger(__name__)
@@ -39,8 +37,8 @@ def get_bootloader(name: str) -> BootloaderBase | None:
     if name not in _BOOTLOADERS:
         try:
             importlib.import_module(f".{name}", __package__)
-        except ImportError as err:
-            LOGGER.error("Failed to load bootloader %s: %s", name, err)
+        except ImportError:
+            LOGGER.exception("Failed to load bootloader %s", name)
             return None
 
     bootloader_class = _BOOTLOADERS.get(name)
