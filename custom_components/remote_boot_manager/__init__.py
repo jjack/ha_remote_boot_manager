@@ -60,15 +60,6 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:  # n
     # Register the unauthenticated bootloader view API
     hass.http.register_view(BootloaderView())
 
-    # Register the webhook globally since it iterates over all entries
-    webhook.async_register(
-        hass,
-        DOMAIN,
-        WEBHOOK_NAME,
-        WEBHOOK_ID,
-        handle_os_ingest_webhook,
-    )
-
     return True
 
 
@@ -81,6 +72,16 @@ async def async_setup_entry(
     await manager.async_load()
     entry.runtime_data = manager
 
+    # Register the webhook globally since it iterates over all entries
+    webhook_id = entry.data.get("webhook_id", WEBHOOK_ID)
+    webhook.async_register(
+        hass,
+        DOMAIN,
+        WEBHOOK_NAME,
+        webhook_id,
+        handle_os_ingest_webhook,
+    )
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
@@ -91,6 +92,8 @@ async def async_unload_entry(
     entry: RemoteBootManagerConfigEntry,
 ) -> bool:
     """Handle removal of an entry."""
+    webhook_id = entry.data.get("webhook_id", WEBHOOK_ID)
+    webhook.async_unregister(hass, webhook_id)
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 

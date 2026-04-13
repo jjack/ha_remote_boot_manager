@@ -3,7 +3,12 @@
         "step": {
             "user": {
                 "description": "If you need help with the configuration have a look here: {documentation_url}",
-                "data": {}
+                "data": {
+                    "webhook_id": "Webhook ID"
+                },
+                "data_descripition": {
+                    "webhook_id": "It is strongly recommended to change the Webhook ID to a custom, hard-to-guess continuous string to protect you from unauthorized access."
+                }
             }
         },
         "error": {

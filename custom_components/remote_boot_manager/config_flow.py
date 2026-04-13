@@ -6,7 +6,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.loader import async_get_loaded_integration
 
-from .const import DOMAIN
+from .const import DOMAIN, WEBHOOK_ID
 
 
 class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -28,12 +28,20 @@ class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
         if user_input is not None:
-            # We don't really have any data to save, so we just pass an empty dict.
-            return self.async_create_entry(title="Remote Boot Manager", data={})
+            return self.async_create_entry(title="Remote Boot Manager", data=user_input)
+
+        data_schema = vol.Schema(
+            {
+                vol.Required(
+                    "webhook_id",
+                    default=WEBHOOK_ID,
+                ): str,
+            }
+        )
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({}),
+            data_schema=data_schema,
             errors={},
             description_placeholders={
                 "documentation_url": integration.documentation,
