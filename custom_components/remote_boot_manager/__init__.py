@@ -55,6 +55,23 @@ WEBHOOK_SCHEMA = vol.Schema(
 
 
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:  # noqa: ARG001
+    """Set up the remote_boot_manager component."""
+    # Register the unauthenticated bootloader view API
+    hass.http.register_view(BootloaderView())
+
+    # Register the webhook globally since it iterates over all entries
+    webhook.async_register(
+        hass,
+        DOMAIN,
+        WEBHOOK_NAME,
+        WEBHOOK_ID,
+        handle_os_ingest_webhook,
+    )
+
+    return True
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: RemoteBootManagerConfigEntry,
@@ -63,19 +80,6 @@ async def async_setup_entry(
     manager = RemoteBootManager(hass)
     await manager.async_load()
     entry.runtime_data = manager
-
-    # register a webhook at /api/webhook/remote_boot_manager_ingest
-    webhook.async_register(
-        hass,
-        DOMAIN,
-        WEBHOOK_NAME,
-        WEBHOOK_ID,
-        handle_os_ingest_webhook,
-    )
-    # Register the unauthenticated bootloader view API
-    if not hass.data.get(DOMAIN, {}).get("view_registered"):
-        hass.data.setdefault(DOMAIN, {})["view_registered"] = True
-        hass.http.register_view(BootloaderView())
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -87,8 +91,6 @@ async def async_unload_entry(
     entry: RemoteBootManagerConfigEntry,
 ) -> bool:
     """Handle removal of an entry."""
-    webhook.async_unregister(hass, WEBHOOK_ID)
-
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
