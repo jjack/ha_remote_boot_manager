@@ -46,9 +46,9 @@ def coerce_mac_address(value: str) -> str:
 WEBHOOK_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_MAC): coerce_mac_address,
-        vol.Optional("hostname"): cv.string,
-        vol.Optional("bootloader"): cv.string,
-        vol.Optional("os_list"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional("hostname", default="Unknown Server"): cv.string,
+        vol.Optional("bootloader", default="unknown"): cv.string,
+        vol.Optional("os_list", default=[]): vol.All(cv.ensure_list, [cv.string]),
     },
     extra=vol.ALLOW_EXTRA,
 )
