@@ -28,7 +28,7 @@ class RemoteBootManager:
         """
         In-memory dict to hold server information, keyed by mac to ensure uniqueness
 
-          { "mac_address1": {
+          { "mac": {
               "hostname":        "server1",
               "bootloader":  "grub",
               "os_list":     ["ubuntu", "windows"],

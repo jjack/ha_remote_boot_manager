@@ -118,6 +118,7 @@ async def async_validate_webhook_payload(
         raw_payload = await request.json()
     except ValueError:
         LOGGER.warning("Webhook payload is not valid JSON")
+        LOGGER.debug("Received invalid JSON payload: %s", body)
         return None, web.Response(status=400, text="Invalid JSON payload")
 
     LOGGER.debug("Received remote boot manager webhook with payload: %s", raw_payload)
@@ -130,13 +131,13 @@ async def async_validate_webhook_payload(
         return None, web.Response(status=400, text=f"Invalid payload format: {err}")
 
     # Note: CONF_MAC evaluates to "mac", so the schema parses the input key into "mac"
-    # if we used CONF_MAC in the schema instead of "mac_address", we fetch it identically.
-    mac_address = payload.get(CONF_MAC, payload.get("mac_address"))
+    # if we used CONF_MAC in the schema instead of CONF_MAC, we fetch it identically.
+    mac_address = payload.get(CONF_MAC, payload.get(CONF_MAC))
     if not mac_address:
         LOGGER.warning(
             "Received remote boot manager push request webhook with empty mac_address string"
         )
-        return None, web.Response(status=400, text="empty mac_address")
+        return None, web.Response(status=400, text=f"empty {CONF_MAC}")
 
     return payload, None
 
@@ -153,7 +154,7 @@ async def handle_os_ingest_webhook(
         if payload is None:
             return web.Response(status=500, text="Unexpected empty payload")
 
-        mac_address = payload.get(CONF_MAC, payload.get("mac_address"))
+        mac_address = payload.get(CONF_MAC, payload.get(CONF_MAC))
 
         # Find our manager instance from the active config entries
         manager_found = False
