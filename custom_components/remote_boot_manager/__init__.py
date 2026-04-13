@@ -177,14 +177,18 @@ async def handle_os_ingest_webhook(
 
 async def async_remove_entry(
     hass: HomeAssistant,
-    entry: RemoteBootManagerConfigEntry,  # noqa: ARG001
+    entry: RemoteBootManagerConfigEntry,
 ) -> None:
     """Handle removal of an entry."""
     # Since async_unload_entry unregisters the webhook,
     # and Home Assistant automatically handles device/entity removal,
     # we just need to purge the manager data.
-    manager = RemoteBootManager(hass)
-    await manager.async_purge_data()
+    if hasattr(entry, "runtime_data") and entry.runtime_data:
+        await entry.runtime_data.async_purge_data()
+    else:
+        # Fallback if entry was never loaded
+        manager = RemoteBootManager(hass)
+        await manager.async_purge_data()
 
 
 async def async_remove_config_entry_device(
