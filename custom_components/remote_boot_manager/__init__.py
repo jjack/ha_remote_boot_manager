@@ -9,14 +9,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from aiohttp import web
 from homeassistant.components import webhook
-from homeassistant.const import Platform, CONF_MAC
+from homeassistant.const import CONF_MAC, Platform
 from homeassistant.helpers.device_registry import format_mac
-import homeassistant.helpers.config_validation as cv
 
-from .const import DOMAIN, LOGGER, WEBHOOK_ID, WEBHOOK_NAME, WEBHOOK_MAX_PAYLOAD_BYTES
+from .const import DOMAIN, LOGGER, WEBHOOK_ID, WEBHOOK_MAX_PAYLOAD_BYTES, WEBHOOK_NAME
 from .manager import RemoteBootManager
 from .views import BootloaderView
 
@@ -37,7 +37,8 @@ def coerce_mac_address(value: str) -> str:
     formatted_mac = format_mac(raw_mac)
 
     if formatted_mac is None:
-        raise vol.Invalid(f"'{value}' is not a valid MAC address format")
+        err_msg = f"'{value}' is not a valid MAC address format"
+        raise vol.Invalid(err_msg)
 
     return formatted_mac
 
@@ -125,25 +126,16 @@ async def async_validate_webhook_payload(
 
     try:
         # Use cast to force the type checker to treat the output as a dict
-        payload = cast(dict[str, Any], WEBHOOK_SCHEMA(raw_payload))
+        payload = cast("dict[str, Any]", WEBHOOK_SCHEMA(raw_payload))
     except vol.Invalid as err:
         LOGGER.warning("Invalid webhook schema from incoming request: %s", err)
         return None, web.Response(status=400, text=f"Invalid payload format: {err}")
-
-    # Note: CONF_MAC evaluates to "mac", so the schema parses the input key into "mac"
-    # if we used CONF_MAC in the schema instead of CONF_MAC, we fetch it identically.
-    mac_address = payload.get(CONF_MAC, payload.get(CONF_MAC))
-    if not mac_address:
-        LOGGER.warning(
-            "Received remote boot manager push request webhook with empty mac_address string"
-        )
-        return None, web.Response(status=400, text=f"empty {CONF_MAC}")
 
     return payload, None
 
 
 async def handle_os_ingest_webhook(
-    hass: HomeAssistant, webhook_id: str, request: web.Request
+    hass: HomeAssistant, _webhook_id: str, request: web.Request
 ) -> web.Response:
     """Handle incoming OS push requests from bare-metal Go agents."""
     try:
@@ -154,10 +146,9 @@ async def handle_os_ingest_webhook(
         if payload is None:
             return web.Response(status=500, text="Unexpected empty payload")
 
-        mac_address = payload.get(CONF_MAC, payload.get(CONF_MAC))
-
         # Find our manager instance from the active config entries
         manager_found = False
+        mac_address = payload.get(CONF_MAC)
         for entry in hass.config_entries.async_entries(DOMAIN):
             LOGGER.debug(
                 "Checking config entry %s for webhook payload processing",
@@ -172,6 +163,6 @@ async def handle_os_ingest_webhook(
             return web.Response(status=503, text="Integration not ready")
 
         return web.Response(status=200, text="OK")
-    except Exception as err:
-        LOGGER.error("Failed to process remote boot manager webhook: %s", err)
+    except Exception as err:  # noqa: BLE001
+        LOGGER.error("Failed to process webhook: %s", err)
         return web.Response(status=500, text="Internal Server Error")
