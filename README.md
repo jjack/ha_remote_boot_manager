@@ -1,46 +1,44 @@
-# Notice
+# Remote Boot Manager for Home Assistant
 
-The component and platforms in this repository are not meant to be used by a
-user, but as a "blueprint" that custom component developers can build
-upon, to make more awesome stuff.
+Manage and automate the booting of your remote bare-metal servers (like dual-boot Windows/Linux machines) directly from Home Assistant.
 
-HAVE FUN! 😎
+This integration works in tandem with the [Remote Boot Agent](https://github.com/jjack/remote-boot-agent) to automatically discover your servers, display their available Operating Systems, allow you to select which OS to boot into next, and wake them up via Wake-on-LAN.
 
-## Why?
+## Features
+* **Dynamic OS Discovery**: Servers automatically report their available OS list (e.g., Ubuntu, Windows) to Home Assistant.
+* **Next Boot Selection**: Change the next boot OS via a dropdown `select` entity.
+* **Wake-on-LAN**: Wake up sleeping servers via a `button` entity.
+* **Bootloader Integration**: Exposes an endpoint for GRUB (or other bootloaders) to fetch the selected OS and automatically reset to prevent boot loops.
+* **Secure Webhooks**: Uses auto-generated, secure webhooks for agent-to-HA communication.
 
-This is simple, by having custom_components look (README + structure) the same
-it is easier for developers to help each other and for users to start using them.
+## Installation
 
-If you are a developer and you want to add things to this "blueprint" that you think more
-developers will have use for, please open a PR to add it :)
+### Via HACS (Recommended)
+1. Open HACS in Home Assistant.
+2. Go to **Integrations**.
+3. Click the 3 dots in the top right -> **Custom repositories**.
+4. Add `jjack/ha_remote_boot_manager` as an Integration.
+5. Download it and restart Home Assistant.
 
-## What?
+### Manual Installation
+1. Copy the `custom_components/remote_boot_manager` directory to your Home Assistant `custom_components` directory.
+2. Restart Home Assistant.
 
-This repository contains multiple files, here is a overview:
+## Configuration & Setup
 
-File | Purpose | Documentation
--- | -- | --
-`.devcontainer.json` | Used for development/testing with Visual Studio Code. | [Documentation](https://code.visualstudio.com/docs/remote/containers)
-`.github/ISSUE_TEMPLATE/*.yml` | Templates for the issue tracker | [Documentation](https://help.github.com/en/github/building-a-strong-community/configuring-issue-templates-for-your-repository)
-`custom_components/remote_boot_manager/*` | Integration files, this is where everything happens. | [Documentation](https://developers.home-assistant.io/docs/creating_component_index)
-`CONTRIBUTING.md` | Guidelines on how to contribute. | [Documentation](https://help.github.com/en/github/building-a-strong-community/setting-guidelines-for-repository-contributors)
-`LICENSE` | The license file for the project. | [Documentation](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/licensing-a-repository)
-`README.md` | The file you are reading now, should contain info about the integration, installation and configuration instructions. | [Documentation](https://help.github.com/en/github/writing-on-github/basic-writing-and-formatting-syntax)
-`requirements.txt` | Python packages used for development/lint/testing this integration. | [Documentation](https://pip.pypa.io/en/stable/user_guide/#requirements-files)
+1. Go to **Settings** -> **Devices & Services** in Home Assistant.
+2. Click **+ Add Integration** and search for "Remote Boot Manager".
+3. **IMPORTANT:** During setup, Home Assistant will generate a unique, secure `webhook_id`. **You must copy and save this ID and the example configuration!** It is only shown to you once for security reasons. You will need it to configure your remote servers.
 
-## How?
+## Remote Boot Agent (Client Setup)
 
-1. Create a new repository in GitHub, using this repository as a template by clicking the "Use this template" button in the GitHub UI.
-1. Open your new repository in Visual Studio Code devcontainer (Preferably with the "`Dev Containers: Clone Repository in Named Container Volume...`" option).
-1. Rename all instances of the `remote_boot_manager` to `custom_components/<your_integration_domain>` (e.g. `custom_components/awesome_integration`).
-1. Rename all instances of the `Remote Boot Manager` to `<Your Integration Name>` (e.g. `Awesome Integration`).
-1. Run the `scripts/develop` to start HA and test out your new integration.
+For this integration to work, you must install a bare-metal GO agent on **every** target server you want to manage.
 
-## Next steps
+**Agent Repository:** [jjack/remote-boot-agent](https://github.com/jjack/remote-boot-agent)
 
-These are some next steps you may want to look into:
-- Add tests to your integration, [`pytest-homeassistant-custom-component`](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component) can help you get started.
-- Add brand images (logo/icon).
-- Create your first release.
-- Share your integration on the [Home Assistant Forum](https://community.home-assistant.io/).
-- Submit your integration to [HACS](https://hacs.xyz/docs/publish/start).
+### Basic Agent Setup:
+1. Install the agent on your target server.
+2. Configure the agent using your Home Assistant URL and the `webhook_id` you saved during the integration setup.
+3. Run the agent. It will automatically ping Home Assistant, and your server will instantly appear as a new Device!
+
+*(Full installation and configuration instructions for the agent are TBD and can be found at the [remote-boot-agent repository](https://github.com/jjack/remote-boot-agent)).*
