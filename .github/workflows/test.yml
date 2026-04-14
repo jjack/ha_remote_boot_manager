@@ -30,4 +30,4 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=custom_components.remote_boot_manager --cov-report=term-missing --cov-fail-under=75 tests/
+          pytest --cov=custom_components.remote_boot_manager --cov-report=term-missing --cov-fail-under=95 tests/
