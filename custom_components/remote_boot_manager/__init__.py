@@ -53,6 +53,8 @@ WEBHOOK_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:  # noqa: ARG001
