@@ -1,14 +1,14 @@
-# ruff: noqa: S101
 """Test manager for remote_boot_manager."""
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import async_get as async_get_dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.remote_boot_manager.const import DOMAIN, DEFAULT_OS_NONE
+from custom_components.remote_boot_manager.const import DEFAULT_OS_NONE, DOMAIN
 from custom_components.remote_boot_manager.manager import RemoteBootManager
+
 
 async def test_manager_load_with_data(hass: HomeAssistant) -> None:
     """Test loading manager with existing store data."""
@@ -54,7 +54,7 @@ async def test_manager_process_existing_server(hass: HomeAssistant, mock_manager
         "os_list": ["windows"], # ubuntu removed
         "bootloader": "grub"
     }
-    
+
     mock_manager._notify_listeners = MagicMock()
     mock_manager.async_process_webhook_payload("aa:bb:cc:dd:ee:ff", payload)
 

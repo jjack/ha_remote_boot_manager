@@ -1,4 +1,3 @@
-# ruff: noqa: S101
 """Test the config flow."""
 
 from unittest.mock import patch

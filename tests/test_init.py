@@ -1,14 +1,11 @@
-# ruff: noqa: S101
 """Test __init__ for remote_boot_manager."""
 
-import json
 from unittest.mock import MagicMock, patch
 
 import pytest
 import voluptuous as vol
 from aiohttp import web
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.device_registry import async_get as async_get_dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -135,6 +132,5 @@ def test_coerce_mac_address_invalid() -> None:
     """Test MAC address coercion."""
     with patch(
         "custom_components.remote_boot_manager.__init__.format_mac", return_value=None
-    ):
-        with pytest.raises(vol.Invalid):
-            coerce_mac_address("invalid")
+    ), pytest.raises(vol.Invalid):
+        coerce_mac_address("invalid")

@@ -15,6 +15,21 @@ ignore = [
     "ISC001", # incompatible with formatter
 ]
 
+[lint.per-file-ignores]
+# Ignore strict rules that aren't practical in test files
+"tests/**/*" = [
+    "S101",     # use of assert detected
+    "PLR2004",  # magic value used in comparison
+    "TC002",    # move third-party import into a type-checking block
+    "TC003",    # move stdlib import into a type-checking block
+    "ANN",      # missing type annotations (fixtures)
+    "ARG001",   # unused function argument (pytest fixtures)
+    "SLF001",   # private member accessed (we need to test private methods/attributes)
+    "PT011",    # pytest.raises() is too broad (no match string)
+    "E501",     # line too long (tests often have long descriptive names or mock strings)
+    "D",        # missing docstrings in tests
+]
+
 [lint.flake8-pytest-style]
 fixture-parentheses = false
 
