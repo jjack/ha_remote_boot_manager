@@ -49,6 +49,7 @@ async def test_single_instance_allowed(hass: HomeAssistant) -> None:
     assert result["type"] == FlowResultType.ABORT
     assert result["reason"] == "single_instance_allowed"
 
+
 async def test_webhook_generation_failed(hass: HomeAssistant) -> None:
     """Test when webhook ID is not set."""
     flow = config_entries.HANDLERS[DOMAIN]()

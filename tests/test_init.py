@@ -130,7 +130,11 @@ async def test_async_reload_entry(hass: HomeAssistant) -> None:
 
 def test_coerce_mac_address_invalid() -> None:
     """Test MAC address coercion."""
-    with patch(
-        "custom_components.remote_boot_manager.__init__.format_mac", return_value=None
-    ), pytest.raises(vol.Invalid):
+    with (
+        patch(
+            "custom_components.remote_boot_manager.__init__.format_mac",
+            return_value=None,
+        ),
+        pytest.raises(vol.Invalid),
+    ):
         coerce_mac_address("invalid")
