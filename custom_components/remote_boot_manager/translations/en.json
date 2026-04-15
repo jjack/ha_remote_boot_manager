@@ -8,7 +8,7 @@
             },
             "webhook_info": {
                 "title": "Generated Webhook ID",
-                "description": "Here is your securely generated Webhook ID. **Please copy this now as it will not be shown again.**\n\n```text\n{webhook_id}\n```\n\nFor full instructions on configuring and installing the agent, visit the [Remote Boot Agent](https://github.com/jjack/remote-boot-agent) repository."
+                "description": "Here is your securely generated Webhook ID. **Please copy this now as it will not be shown again.**\n\n```text\n{webhook_id}\n```\n\nFor full instructions on configuring and installing the agent, visit the [Remote Boot Agent]({agent_url}) repository."
             }
         },
         "error": {
