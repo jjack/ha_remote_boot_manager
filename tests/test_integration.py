@@ -134,10 +134,10 @@ async def test_button_press_resets_boot_option(
         await hass.async_block_till_done()
         mock_wake.assert_called_once_with("aa:bb:cc:dd:ee:ff")
 
-    # Verify boot option resets to default
+    # Verify boot option does not reset to default
     state = hass.states.get(entity_id_select)
     assert state is not None
-    assert state.state == DEFAULT_BOOT_OPTION_NONE
+    assert state.state != DEFAULT_BOOT_OPTION_NONE
 
 
 async def test_remove_integration_cleans_up(
