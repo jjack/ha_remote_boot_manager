@@ -12,7 +12,7 @@ DEFAULT_BOOT_OPTION_NONE = "(none)"
 WEBHOOK_NAME = "Remote Boot Manager Ingest"
 WEBHOOK_MAX_PAYLOAD_BYTES = 102400  # 100 KB limit
 
-BOOT_AGENT_URL = "https://github.com/jjack/ha-remote-boot-agent"
+BOOT_AGENT_URL = "https://github.com/jjack/remote-boot-agent"
 BOOTLOADER_VIEW_URL = "/api/remote_boot_manager/{mac_address}"
 
 SAVE_DELAY = 15.0  # seconds to debounce saving to storage after changes
