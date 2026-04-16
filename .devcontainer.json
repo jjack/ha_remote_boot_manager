@@ -1,5 +1,5 @@
 {
-    "name": "jjack/ha_remote_boot_manager",
+    "name": "jjack/hass-remote-boot-manager",
     "image": "mcr.microsoft.com/devcontainers/base:debian",
     "postCreateCommand": "scripts/setup",
     "forwardPorts": [

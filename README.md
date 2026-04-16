@@ -17,7 +17,7 @@ This integration works in tandem with the [Remote Boot Agent](https://github.com
 1. Open HACS in Home Assistant.
 2. Go to **Integrations**.
 3. Click the 3 dots in the top right -> **Custom repositories**.
-4. Add `jjack/ha_remote_boot_manager` as an Integration.
+4. Add `jjack/hass-remote-boot-manager` as an Integration.
 5. Download it and restart Home Assistant.
 
 ### Manual Installation

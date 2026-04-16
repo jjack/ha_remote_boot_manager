@@ -2,7 +2,7 @@
 Custom integration to integrate remote_boot_manager with Home Assistant.
 
 For more details about this integration, please refer to
-https://github.com/jjack/ha_remote_boot_manager
+https://github.com/jjack/hass-remote-boot-manager
 """
 
 from __future__ import annotations

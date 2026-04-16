@@ -48,7 +48,7 @@ Use [black](https://github.com/ambv/black) to make sure the code follows the sty
 
 ## Test your code modification
 
-This custom component is based on [remote_boot_manager template](https://github.com/jjack/ha_remote_boot_manager).
+This custom component is based on [remote_boot_manager template](https://github.com/jjack/hass-remote-boot-manager).
 
 It comes with development environment in a container, easy to launch
 if you use Visual Studio Code. With this container you will have a stand alone
