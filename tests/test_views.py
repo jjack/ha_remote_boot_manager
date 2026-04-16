@@ -75,7 +75,7 @@ async def test_bootloader_view_exception(hass: HomeAssistant) -> None:
 
     mock_manager = MagicMock()
     mock_manager.servers = {"aa:bb:cc:dd:ee:ff": {"bootloader": "grub"}}
-    mock_manager.async_consume_selected_os.side_effect = Exception("Boom")
+    mock_manager.async_consume_next_boot_option.side_effect = Exception("Boom")
     mock_entry = MockConfigEntry(domain="remote_boot_manager")
     mock_entry.add_to_hass(hass)
     mock_entry.runtime_data = mock_manager

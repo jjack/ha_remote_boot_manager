@@ -63,7 +63,9 @@ class BootloaderView(HomeAssistantView):
         # Call the appropriate bootloader instance to generate the response
         try:
             server_copy = server.copy()
-            server_copy["selected_os"] = manager.async_consume_selected_os(mac_address)
+            server_copy["next_boot_option"] = manager.async_consume_next_boot_option(
+                mac_address
+            )
             return bootloader.generate_boot_config(server_copy)
         except Exception:
             LOGGER.exception("Error generating boot config for %s", mac_address)

@@ -7,7 +7,7 @@ LOGGER: Logger = getLogger(__package__)
 DOMAIN = "remote_boot_manager"
 DOMAIN_DATA = f"{DOMAIN}.servers"
 
-DEFAULT_OS_NONE = "(none)"
+DEFAULT_BOOT_OPTION_NONE = "(none)"
 
 WEBHOOK_NAME = "Remote Boot Manager Ingest"
 WEBHOOK_MAX_PAYLOAD_BYTES = 102400  # 100 KB limit

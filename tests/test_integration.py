@@ -9,7 +9,7 @@ from homeassistant.helpers.entity_registry import async_get as async_get_er
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.remote_boot_manager.const import DEFAULT_OS_NONE, DOMAIN
+from custom_components.remote_boot_manager.const import DEFAULT_BOOT_OPTION_NONE, DOMAIN
 
 
 @pytest.fixture
@@ -75,7 +75,7 @@ async def test_webhook_discovery(hass: HomeAssistant, setup_integration) -> None
 
     state = hass.states.get(entity_id_select)
     assert state is not None
-    assert state.state == DEFAULT_OS_NONE
+    assert state.state == DEFAULT_BOOT_OPTION_NONE
 
     state = hass.states.get(entity_id_button)
     assert state is not None
@@ -137,7 +137,7 @@ async def test_button_press_resets_boot_option(
     # Verify boot option resets to default
     state = hass.states.get(entity_id_select)
     assert state is not None
-    assert state.state == DEFAULT_OS_NONE
+    assert state.state == DEFAULT_BOOT_OPTION_NONE
 
 
 async def test_remove_integration_cleans_up(

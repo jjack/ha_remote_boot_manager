@@ -9,7 +9,13 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.storage import Store
 
-from .const import DEFAULT_OS_NONE, DOMAIN, LOGGER, SAVE_DELAY, SIGNAL_NEW_SERVER
+from .const import (
+    DEFAULT_BOOT_OPTION_NONE,
+    DOMAIN,
+    LOGGER,
+    SAVE_DELAY,
+    SIGNAL_NEW_SERVER,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -32,8 +38,8 @@ class RemoteBootManager:
           { "mac": {
               "hostname":        "server1",
               "bootloader":  "grub",
-              "os_list":     ["ubuntu", "windows"],
-              "selected_os": "(none)"
+              "boot_options":     ["ubuntu", "windows"],
+              "next_boot_option": "(none)"
           }
         """
         self.servers: dict[str, Any] = {}
@@ -92,11 +98,11 @@ class RemoteBootManager:
 
         is_new_server = mac_address not in self.servers
         if is_new_server:
-            selected_boot_option = DEFAULT_OS_NONE
+            next_boot_option = DEFAULT_BOOT_OPTION_NONE
             LOGGER.info("Discovered new server: %s (%s)", hostname, mac_address)
         else:
-            selected_boot_option = self.servers[mac_address].get(
-                "selected_os", DEFAULT_OS_NONE
+            next_boot_option = self.servers[mac_address].get(
+                "next_boot_option", DEFAULT_BOOT_OPTION_NONE
             )
             old_hostname = self.servers[mac_address]["hostname"]
 
@@ -123,21 +129,22 @@ class RemoteBootManager:
             "hostname": hostname,
             "bootloader": bootloader,
             "boot_options": [],
-            "selected_boot_option": selected_boot_option,
+            "next_boot_option": next_boot_option,
         }
 
         # add "(none)" option to the front of the list if it's not already there
-        if boot_options and boot_options[0] != DEFAULT_OS_NONE:
-            boot_options = [DEFAULT_OS_NONE, *boot_options]
+        if boot_options and boot_options[0] != DEFAULT_BOOT_OPTION_NONE:
+            boot_options = [DEFAULT_BOOT_OPTION_NONE, *boot_options]
 
         self.servers[mac_address]["boot_options"] = boot_options
 
         # If the selected boot option is no longer in the list, reset it
         if (
-            self.servers[mac_address]["selected_boot_option"] not in boot_options
-            and self.servers[mac_address]["selected_boot_option"] != DEFAULT_OS_NONE
+            self.servers[mac_address]["next_boot_option"] not in boot_options
+            and self.servers[mac_address]["next_boot_option"]
+            != DEFAULT_BOOT_OPTION_NONE
         ):
-            self.servers[mac_address]["selected_boot_option"] = DEFAULT_OS_NONE
+            self.servers[mac_address]["next_boot_option"] = DEFAULT_BOOT_OPTION_NONE
 
         if is_new_server:
             async_dispatcher_send(self.hass, SIGNAL_NEW_SERVER, mac_address)
@@ -147,36 +154,36 @@ class RemoteBootManager:
         self._save()
 
     @callback
-    def async_set_selected_boot_option(
-        self, mac_address: str, selected_boot_option: str
+    def async_set_next_boot_option(
+        self, mac_address: str, next_boot_option: str
     ) -> None:
         """Notify listeners that the selected boot option has changed."""
         if mac_address in self.servers:
-            self.servers[mac_address]["selected_boot_option"] = selected_boot_option
+            self.servers[mac_address]["next_boot_option"] = next_boot_option
             self._save()
             self._notify_listeners()
             LOGGER.debug(
                 "Set selected boot option for %s to %s",
                 mac_address,
-                selected_boot_option,
+                next_boot_option,
             )
 
     @callback
-    def async_consume_selected_boot_option(self, mac_address: str) -> str:
+    def async_consume_next_boot_option(self, mac_address: str) -> str:
         """Retrieve the requested boot option and immediately resets the state."""
         if mac_address not in self.servers:
             LOGGER.warning(
                 "GRUB requested boot option for unknown MAC address: %s", mac_address
             )
-            return DEFAULT_OS_NONE
+            return DEFAULT_BOOT_OPTION_NONE
 
         # grab the selected boot option and reset the state for next boot to
         # prevent boot loops
-        selected_boot_option = self.servers[mac_address]["selected_boot_option"]
-        self.servers[mac_address]["selected_boot_option"] = DEFAULT_OS_NONE
+        next_boot_option = self.servers[mac_address]["next_boot_option"]
+        self.servers[mac_address]["next_boot_option"] = DEFAULT_BOOT_OPTION_NONE
         self._save()
 
         # Notify UI to revert the dropdown back to "(none)"
         self._notify_listeners()
 
-        return selected_boot_option
+        return next_boot_option

@@ -13,7 +13,7 @@ from homeassistant.helpers.device_registry import (
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import DEFAULT_OS_NONE, DOMAIN, LOGGER, SIGNAL_NEW_SERVER
+from .const import DEFAULT_BOOT_OPTION_NONE, DOMAIN, LOGGER, SIGNAL_NEW_SERVER
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -82,8 +82,8 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
         opts = server_data.get("boot_options", [])
 
         # Ensure the default "(none)" is always a valid option
-        if DEFAULT_OS_NONE not in opts:
-            opts = [DEFAULT_OS_NONE, *opts]
+        if DEFAULT_BOOT_OPTION_NONE not in opts:
+            opts = [DEFAULT_BOOT_OPTION_NONE, *opts]
 
         return opts
 
@@ -91,11 +91,11 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
     def current_option(self) -> str | None:
         """Return the currently pending boot option."""
         server_data = self.manager.servers.get(self.mac_address, {})
-        return server_data.get("selected_boot_option", DEFAULT_OS_NONE)
+        return server_data.get("next_boot_option", DEFAULT_BOOT_OPTION_NONE)
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
-        self.manager.async_set_selected_boot_option(self.mac_address, option)
+        self.manager.async_set_next_boot_option(self.mac_address, option)
 
     async def async_added_to_hass(self) -> None:
         """Run when the entity is added to Home Assistant."""
@@ -109,9 +109,7 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
                 self.mac_address,
                 last_state.state,
             )
-            self.manager.async_set_selected_boot_option(
-                self.mac_address, last_state.state
-            )
+            self.manager.async_set_next_boot_option(self.mac_address, last_state.state)
 
         # Subscribe to manager updates so the UI redraws when webhooks arrive
         self.async_on_remove(self.manager.async_add_listener(self.async_write_ha_state))

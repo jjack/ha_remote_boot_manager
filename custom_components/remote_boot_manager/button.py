@@ -14,7 +14,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-from .const import DEFAULT_OS_NONE, DOMAIN, SIGNAL_NEW_SERVER
+from .const import DEFAULT_BOOT_OPTION_NONE, DOMAIN, SIGNAL_NEW_SERVER
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -83,7 +83,9 @@ class RemoteBootManagerButton(ButtonEntity):
     async def async_press(self) -> None:
         """Handle the button press."""
         # Reset the selected boot options when waking the server
-        self.manager.async_set_selected_boot_option(self.mac_address, DEFAULT_OS_NONE)
+        self.manager.async_set_next_boot_option(
+            self.mac_address, DEFAULT_BOOT_OPTION_NONE
+        )
 
         # wakeonlan is blocking, so it needs run in the executor queue
         await self.hass.async_add_executor_job(

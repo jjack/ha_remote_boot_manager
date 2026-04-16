@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import async_get as async_get_dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.remote_boot_manager.const import DEFAULT_OS_NONE, DOMAIN
+from custom_components.remote_boot_manager.const import DEFAULT_BOOT_OPTION_NONE, DOMAIN
 from custom_components.remote_boot_manager.manager import RemoteBootManager
 
 
@@ -52,15 +52,15 @@ async def test_manager_process_existing_server(
 
     mock_manager.servers["aa:bb:cc:dd:ee:ff"] = {
         "hostname": "old-name",
-        "selected_os": "ubuntu",
-        "os_list": ["(none)", "ubuntu", "windows"],
+        "next_boot_option": "ubuntu",
+        "boot_options": ["(none)", "ubuntu", "windows"],
         "bootloader": "grub",
     }
 
     # Call with new hostname
     payload = {
         "hostname": "new-name",
-        "os_list": ["windows"],  # ubuntu removed
+        "boot_options": ["windows"],  # ubuntu removed
         "bootloader": "grub",
     }
 
@@ -68,8 +68,11 @@ async def test_manager_process_existing_server(
     mock_manager.async_process_webhook_payload("aa:bb:cc:dd:ee:ff", payload)
 
     assert mock_manager.servers["aa:bb:cc:dd:ee:ff"]["hostname"] == "new-name"
-    # selected_os should have been reset to default because "ubuntu" is not in ["windows"]
-    assert mock_manager.servers["aa:bb:cc:dd:ee:ff"]["selected_os"] == DEFAULT_OS_NONE
+    # next_boot_option should have been reset to default because "ubuntu" is not in ["windows"]
+    assert (
+        mock_manager.servers["aa:bb:cc:dd:ee:ff"]["next_boot_option"]
+        == DEFAULT_BOOT_OPTION_NONE
+    )
     mock_manager._notify_listeners.assert_called_once()
 
     # check device name updated
@@ -81,7 +84,10 @@ async def test_manager_consume_unknown_mac(
     hass: HomeAssistant, mock_manager: RemoteBootManager
 ) -> None:
     """Test consuming from an unknown MAC returns default."""
-    assert mock_manager.async_consume_selected_os("unknown") == DEFAULT_OS_NONE
+    assert (
+        mock_manager.async_consume_next_boot_option("unknown")
+        == DEFAULT_BOOT_OPTION_NONE
+    )
 
 
 async def test_manager_existing_server_no_device(
@@ -90,11 +96,11 @@ async def test_manager_existing_server_no_device(
     """Test updating an existing server when the device is not found."""
     mock_manager.servers["aa:bb:cc"] = {
         "hostname": "old-name",
-        "selected_os": "foo",
-        "os_list": ["foo"],
+        "next_boot_option": "foo",
+        "boot_options": ["foo"],
         "bootloader": "grub",
     }
-    payload = {"hostname": "new-name", "os_list": ["foo"], "bootloader": "grub"}
+    payload = {"hostname": "new-name", "boot_options": ["foo"], "bootloader": "grub"}
     # No device exists in DR
     mock_manager.async_process_webhook_payload("aa:bb:cc", payload)
     assert mock_manager.servers["aa:bb:cc"]["hostname"] == "new-name"
