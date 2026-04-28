@@ -13,7 +13,12 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from aiohttp import web
 from homeassistant.components import webhook
-from homeassistant.const import CONF_MAC, Platform
+from homeassistant.const import (
+    CONF_BROADCAST_ADDRESS,
+    CONF_BROADCAST_PORT,
+    CONF_MAC,
+    Platform,
+)
 from homeassistant.helpers.device_registry import DeviceEntry, format_mac
 
 from .const import DOMAIN, LOGGER, WEBHOOK_MAX_PAYLOAD_BYTES, WEBHOOK_NAME
@@ -46,11 +51,12 @@ def coerce_mac_address(value: str) -> str:
 WEBHOOK_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_MAC): coerce_mac_address,
-        vol.Optional("hostname", default="Unknown Server"): cv.string,
-        vol.Optional("bootloader", default="unknown"): cv.string,
-        vol.Optional("boot_options", default=[]): vol.All(cv.ensure_list, [cv.string]),
-    },
-    extra=vol.ALLOW_EXTRA,
+        vol.Required("hostname"): cv.string,
+        vol.Required("bootloader"): cv.string,
+        vol.Required("boot_options"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(CONF_BROADCAST_ADDRESS): cv.string,
+        vol.Optional(CONF_BROADCAST_PORT): cv.port,
+    }
 )
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)

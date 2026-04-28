@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.const import CONF_BROADCAST_ADDRESS, CONF_BROADCAST_PORT
 from homeassistant.core import callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_send
@@ -37,6 +38,8 @@ class RemoteBootManager:
 
           { "mac": {
               "hostname":        "server1",
+              "broadcast_address": "192.168.1.255",
+              "broadcast_port":   9,
               "bootloader":  "grub",
               "boot_options":     ["ubuntu", "windows"],
               "next_boot_option": "(none)"
@@ -95,6 +98,8 @@ class RemoteBootManager:
         hostname = payload["hostname"]
         boot_options = payload["boot_options"]
         bootloader = payload["bootloader"]
+        broadcast_address = payload.get(CONF_BROADCAST_ADDRESS)
+        broadcast_port = payload.get(CONF_BROADCAST_PORT)
 
         is_new_server = mac_address not in self.servers
         if is_new_server:
@@ -130,6 +135,8 @@ class RemoteBootManager:
             "bootloader": bootloader,
             "boot_options": [],
             "next_boot_option": next_boot_option,
+            CONF_BROADCAST_ADDRESS: broadcast_address,
+            CONF_BROADCAST_PORT: broadcast_port,
         }
 
         # add "(none)" option to the front of the list if it's not already there

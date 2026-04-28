@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING
 
 import wakeonlan
@@ -9,6 +10,10 @@ from homeassistant.components.button import (
     ButtonDeviceClass,
     ButtonEntity,
     ButtonEntityDescription,
+)
+from homeassistant.const import (
+    CONF_BROADCAST_ADDRESS,
+    CONF_BROADCAST_PORT,
 )
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
@@ -73,16 +78,39 @@ class RemoteBootManagerButton(ButtonEntity):
         self._attr_name = "Wake Server"
         self._attr_has_entity_name = True
 
+        server_data = self.manager.servers.get(mac_address, {})
+
+        broadcast_info = []
+        if b_addr := server_data.get(CONF_BROADCAST_ADDRESS):
+            broadcast_info.append(f"IP: {b_addr}")
+        if b_port := server_data.get(CONF_BROADCAST_PORT):
+            broadcast_info.append(f"Port: {b_port}")
+
+        model_name = (
+            f"Wake-on-LAN ({', '.join(broadcast_info)})"
+            if broadcast_info
+            else "Wake-on-LAN"
+        )
+
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, mac_address)},
-            name=self.manager.servers.get(mac_address, {}).get("hostname"),
+            name=server_data.get("hostname"),
             manufacturer="Remote Boot Manager",
+            model=model_name,
             connections={(CONNECTION_NETWORK_MAC, mac_address)},
         )
 
     async def async_press(self) -> None:
         """Handle the button press."""
+        kwargs = {}
+        server = self.manager.servers.get(self.mac_address, {})
+
+        if broadcast_address := server.get(CONF_BROADCAST_ADDRESS):
+            kwargs["ip_address"] = broadcast_address
+        if broadcast_port := server.get(CONF_BROADCAST_PORT):
+            kwargs["port"] = broadcast_port
+
         # wakeonlan is blocking, so it needs run in the executor queue
         await self.hass.async_add_executor_job(
-            wakeonlan.send_magic_packet, self.mac_address
+            partial(wakeonlan.send_magic_packet, self.mac_address, **kwargs)
         )

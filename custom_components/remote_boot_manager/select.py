@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
+from homeassistant.const import CONF_BROADCAST_ADDRESS, CONF_BROADCAST_PORT
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import (
     CONNECTION_NETWORK_MAC,
@@ -68,10 +69,25 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
         self._attr_name = "Next Boot Option"
         self._attr_has_entity_name = True
 
+        server_data = self.manager.servers.get(mac_address, {})
+
+        broadcast_info = []
+        if broadcast_address := server_data.get(CONF_BROADCAST_ADDRESS):
+            broadcast_info.append(f"Broadcast: {broadcast_address}")
+        if broadcast_port := server_data.get(CONF_BROADCAST_PORT):
+            broadcast_info.append(f"Port: {broadcast_port}")
+
+        model_name = (
+            f"Wake-on-LAN ({', '.join(broadcast_info)})"
+            if broadcast_info
+            else "Wake-on-LAN"
+        )
+
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, mac_address)},
-            name=self.manager.servers.get(mac_address, {}).get("hostname"),
+            name=server_data.get("hostname"),
             manufacturer="Remote Boot Manager",
+            model=model_name,
             connections={(CONNECTION_NETWORK_MAC, mac_address)},
         )
 
