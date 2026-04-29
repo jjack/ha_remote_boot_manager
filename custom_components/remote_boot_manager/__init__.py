@@ -20,6 +20,7 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.helpers.device_registry import DeviceEntry, format_mac
+from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, LOGGER, WEBHOOK_MAX_PAYLOAD_BYTES, WEBHOOK_NAME
 from .manager import RemoteBootManager
@@ -195,8 +196,7 @@ async def async_remove_entry(
         await entry.runtime_data.async_purge_data()
     else:
         # Fallback if entry was never loaded
-        manager = RemoteBootManager(hass)
-        await manager.async_purge_data()
+        await Store(hass, 1, f"{DOMAIN}.servers").async_remove()
 
 
 async def async_remove_config_entry_device(
