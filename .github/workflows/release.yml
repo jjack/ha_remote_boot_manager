@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
 
 permissions:
   contents: write
@@ -16,8 +17,9 @@ jobs:
       - uses: googleapis/release-please-action@v5
         id: release
         with:
-          config-file: .release-please-config.json
-          manifest-file: .release-please-manifest.json
+          target-branch: ${{ github.ref_name }}
+          config-file: ${{ github.ref_name == 'dev' && '.release-please-config-dev.json' || '.release-please-config.json' }}
+          manifest-file: ${{ github.ref_name == 'dev' && '.release-please-manifest-dev.json' || '.release-please-manifest.json' }}
 
       # The following steps only run if a new release was actually published
       - name: Checkout Repository
