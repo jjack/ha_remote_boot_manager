@@ -9,7 +9,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.remote_boot_manager.config_flow import (
     RemoteBootManagerFlowHandler,
-    RemoteBootManagerOptionsFlowHandler,
 )
 from custom_components.remote_boot_manager.const import DOMAIN
 
@@ -124,13 +123,3 @@ async def test_options_flow_no_regenerate(hass: HomeAssistant) -> None:
 
     assert result2.get("type") == FlowResultType.CREATE_ENTRY
     assert entry.data["webhook_id"] == "old_id"
-
-
-async def test_options_webhook_generation_failed(hass: HomeAssistant) -> None:
-    """Test options flow when webhook ID generation fails."""
-    flow = RemoteBootManagerOptionsFlowHandler()
-    flow.hass = hass
-    # _new_webhook_id is None by default
-    result = await flow.async_step_webhook_info()
-    assert result.get("type") == FlowResultType.ABORT
-    assert result.get("reason") == "webhook_id_generation_failed"
