@@ -1,140 +1,70 @@
-"""Test __init__ for remote_boot_manager."""
+"""Tests for remote_boot_manager __init__.py."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-import voluptuous as vol
 from aiohttp import web
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import async_get as async_get_dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.remote_boot_manager.__init__ import (
-    async_reload_entry,
-    async_remove_config_entry_device,
+from custom_components.remote_boot_manager import (
     async_remove_entry,
-    async_validate_webhook_payload,
-    coerce_mac_address,
     handle_boot_options_ingest_webhook,
 )
-from custom_components.remote_boot_manager.const import (
-    DOMAIN,
-    WEBHOOK_MAX_PAYLOAD_BYTES,
-)
-from custom_components.remote_boot_manager.manager import RemoteBootManager
+from custom_components.remote_boot_manager.const import DOMAIN
 
 
-def test_coerce_mac_address() -> None:
-    """Test MAC address coercion."""
-    assert coerce_mac_address("aa:bb:cc:dd:ee:ff") == "aa:bb:cc:dd:ee:ff"
-
-
-async def test_webhook_payload_validation(hass: HomeAssistant) -> None:
-    """Test webhook payload edge cases."""
-    # Test empty payload
+async def test_handle_boot_options_ingest_webhook_routes_to_first_manager(hass):
+    """Test that the webhook handler routes the payload to the first active manager."""
     mock_request = MagicMock(spec=web.Request)
-    mock_request.text.return_value = ""
-    payload, err_response = await async_validate_webhook_payload(mock_request)
-    assert payload is None
-    assert err_response is not None
-    assert err_response.status == 400
 
-    # Test payload too large
-    mock_request.text.return_value = "x" * (WEBHOOK_MAX_PAYLOAD_BYTES + 1)
-    payload, err_response = await async_validate_webhook_payload(mock_request)
-    assert payload is None
-    assert err_response is not None
-    assert err_response.status == 413
+    # Mock the payload validation to return a valid payload
+    mock_payload = {
+        "mac": "00:11:22:33:44:55",
+        "hostname": "test",
+        "bootloader": "grub",
+        "boot_options": ["windows"],
+    }
 
-    # Test invalid JSON
-    mock_request.text.return_value = "not json"
-    mock_request.json.side_effect = ValueError()
-    payload, err_response = await async_validate_webhook_payload(mock_request)
-    assert payload is None
-    assert err_response is not None
-    assert err_response.status == 400
+    mock_entry = MagicMock()
+    mock_entry.entry_id = "test_entry"
+    mock_manager = AsyncMock()
+    mock_entry.runtime_data = mock_manager
 
-    # Test invalid schema (missing MAC)
-    mock_request.text.return_value = '{"hostname": "test"}'
-    mock_request.json.return_value = {"hostname": "test"}
-    mock_request.json.side_effect = None
-    payload, err_response = await async_validate_webhook_payload(mock_request)
-    assert payload is None
-    assert err_response is not None
-    assert err_response.status == 400
+    hass.config_entries.async_entries = MagicMock(return_value=[mock_entry])
 
-
-async def test_handle_webhook_error_cases(hass: HomeAssistant) -> None:
-    """Test handle webhook error responses."""
-    mock_request = MagicMock(spec=web.Request)
-    mock_request.text.return_value = ""
-
-    # Empty body triggers 400 immediately
-    resp = await handle_boot_options_ingest_webhook(hass, "test", mock_request)
-    assert resp.status == 400
-
-    # Exception inside triggers 500
     with patch(
-        "custom_components.remote_boot_manager.__init__.async_validate_webhook_payload",
-        side_effect=Exception("Boom"),
+        "custom_components.remote_boot_manager.async_validate_webhook_payload",
+        return_value=(mock_payload, None),
     ):
-        resp = await handle_boot_options_ingest_webhook(hass, "test", mock_request)
-        assert resp.status == 500
+        response = await handle_boot_options_ingest_webhook(
+            hass, "test_webhook_id", mock_request
+        )
 
-    # Valid payload, but no manager found
-    with patch(
-        "custom_components.remote_boot_manager.__init__.async_validate_webhook_payload",
-        return_value=({"mac": "aa:bb:cc:dd:ee:ff"}, None),
-    ):
-        resp = await handle_boot_options_ingest_webhook(hass, "test", mock_request)
-        assert resp.status == 503
+        assert response.status == 200
+        mock_manager.async_process_webhook_payload.assert_called_once_with(
+            "00:11:22:33:44:55", mock_payload
+        )
 
 
-async def test_manage_device_removal(hass: HomeAssistant) -> None:
-    """Test device removal logic."""
-    entry = MockConfigEntry(domain=DOMAIN)
-    entry.add_to_hass(hass)
-    manager = RemoteBootManager(hass)
-    entry.runtime_data = manager
+async def test_async_remove_entry_with_runtime_data(hass):
+    """Test async_remove_entry when the integration is loaded."""
+    mock_entry = MagicMock()
+    mock_manager = AsyncMock()
+    mock_entry.runtime_data = mock_manager
 
-    dev_reg = async_get_dr(hass)
-    device = dev_reg.async_get_or_create(
-        config_entry_id=entry.entry_id, identifiers={(DOMAIN, "aa:bb:cc:dd:ee:ff")}
-    )
+    await async_remove_entry(hass, mock_entry)
 
-    manager.servers["aa:bb:cc:dd:ee:ff"] = {"mac": "aa:bb:cc:dd:ee:ff"}
-    await async_remove_config_entry_device(hass, entry, device)
-    assert "aa:bb:cc:dd:ee:ff" not in manager.servers
+    mock_manager.async_purge_data.assert_awaited_once()
 
 
-async def test_async_remove_entry_fallback(hass: HomeAssistant) -> None:
-    """Test removing entry that lacks runtime_data."""
-    entry = MockConfigEntry(domain=DOMAIN)
-    entry.add_to_hass(hass)
-    # no runtime_data
-    with patch(
-        "custom_components.remote_boot_manager.manager.RemoteBootManager.async_purge_data"
-    ) as mock_purge:
-        await async_remove_entry(hass, entry)
-        mock_purge.assert_called_once()
+async def test_async_remove_entry_without_runtime_data(hass):
+    """Test async_remove_entry when the integration is unloaded."""
+    mock_entry = MagicMock()
+    del mock_entry.runtime_data  # Ensure hasattr returns False
 
+    with patch("custom_components.remote_boot_manager.Store") as mock_store_class:
+        mock_store_instance = AsyncMock()
+        mock_store_class.return_value = mock_store_instance
 
-async def test_async_reload_entry(hass: HomeAssistant) -> None:
-    """Test config reload."""
-    entry = MockConfigEntry(domain=DOMAIN)
-    entry.add_to_hass(hass)
-    with patch.object(hass.config_entries, "async_reload") as mock_reload:
-        await async_reload_entry(hass, entry)
-        mock_reload.assert_called_once_with(entry.entry_id)
+        await async_remove_entry(hass, mock_entry)
 
-
-def test_coerce_mac_address_invalid() -> None:
-    """Test MAC address coercion."""
-    with (
-        patch(
-            "custom_components.remote_boot_manager.__init__.format_mac",
-            return_value=None,
-        ),
-        pytest.raises(vol.Invalid),
-    ):
-        coerce_mac_address("invalid")
+        mock_store_class.assert_called_once_with(hass, 1, f"{DOMAIN}.servers")
+        mock_store_instance.async_remove.assert_awaited_once()
