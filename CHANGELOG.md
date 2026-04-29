@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/jjack/hass-remote-boot-manager/compare/v0.2.0...v0.3.0) (2026-04-29)
+
+
+### Features
+
+* adding broadcast address and port ([54e1695](https://github.com/jjack/hass-remote-boot-manager/commit/54e16951145b96fcfe9718fa233eda235e145898))
+* can regenerate the webhook id ([421820a](https://github.com/jjack/hass-remote-boot-manager/commit/421820abb57eee7388345acad3481c1b12ef819e))
+
+
+### Bug Fixes
+
+* correcting the remote-boot-agent url ([7240ca3](https://github.com/jjack/hass-remote-boot-manager/commit/7240ca31027a8ee53b0952cd3c77ce72a11d5f07))
+
 ## [0.2.0](https://github.com/jjack/hass-remote-boot-manager/compare/v0.1.1...v0.2.0) (2026-04-16)
 
 
