@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/jjack/hass-remote-boot-manager/compare/v0.3.0...v0.3.1) (2026-04-29)
+
+
+### Bug Fixes
+
+* defaults is not default ([6263aac](https://github.com/jjack/hass-remote-boot-manager/commit/6263aace39069aaa1ec46da19aa152a66f2f631a))
+
 ## [0.3.0](https://github.com/jjack/hass-remote-boot-manager/compare/v0.2.0...v0.3.0) (2026-04-29)
 
 
