@@ -14,11 +14,24 @@ from homeassistant.components.switch import (
     SwitchDeviceClass,
     SwitchEntity,
 )
+from homeassistant.const import (
+    CONF_BROADCAST_ADDRESS,
+    CONF_BROADCAST_PORT,
+    CONF_HOST,
+    CONF_MAC,
+    CONF_NAME,
+)
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.script import Script
 from icmplib import async_ping
 
-from .const import DOMAIN, LOGGER
+from .const import (
+    CONF_BOOT_OPTIONS,
+    CONF_BOOTLOADER,
+    CONF_TURN_OFF,
+    DEFAULT_NAME,
+    DOMAIN,
+)
 from .manager import RemoteServer
 
 if TYPE_CHECKING:
@@ -27,17 +40,34 @@ if TYPE_CHECKING:
     from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Required("mac"): cv.string,
-        vol.Optional("name", default="Wake on LAN"): cv.string,
-        vol.Optional("host"): cv.string,
-        vol.Optional("broadcast_address"): cv.string,
-        vol.Optional("broadcast_port"): cv.port,
-        vol.Optional("bootloader"): cv.string,
-        vol.Optional("boot_options"): vol.All(cv.ensure_list, [cv.string]),
-        vol.Optional("turn_off"): cv.SCRIPT_SCHEMA,
-    }
+def _validate_legacy_only(config: dict[str, Any]) -> dict[str, Any]:
+    """Ensure advanced features aren't configured via YAML."""
+    if CONF_BOOTLOADER in config or CONF_BOOT_OPTIONS in config:
+        mac = config.get(CONF_MAC)
+        msg = (
+            "YAML configuration is strictly for backwards compatibility with the Wake "
+            f"On Lan integration. Do not use '{CONF_BOOTLOADER}' or "
+            f"'{CONF_BOOT_OPTIONS}'. Use the remote-boot-agent to configure advanced "
+            f"features for {mac}."
+        )
+        raise vol.Invalid(msg)
+    return config
+
+
+PLATFORM_SCHEMA = vol.All(
+    PLATFORM_SCHEMA.extend(
+        {
+            vol.Required(CONF_MAC): cv.string,
+            vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+            vol.Optional(CONF_HOST): cv.string,
+            vol.Optional(CONF_BROADCAST_ADDRESS): cv.string,
+            vol.Optional(CONF_BROADCAST_PORT): cv.port,
+            vol.Optional(CONF_BOOTLOADER): cv.string,
+            vol.Optional(CONF_BOOT_OPTIONS): vol.All(cv.ensure_list, [cv.string]),
+            vol.Optional(CONF_TURN_OFF): cv.SCRIPT_SCHEMA,
+        }
+    ),
+    _validate_legacy_only,
 )
 
 
@@ -61,14 +91,6 @@ async def async_setup_platform(
     discovery_info: DiscoveryInfoType | None = None,  # noqa: ARG001
 ) -> None:
     """Set up a remote_boot_manager switch from YAML."""
-    if "bootloader" in config or "boot_options" in config:
-        LOGGER.warning(
-            "configuration.yaml support is for backwards compatability with "
-            "the Wake On Lan integration only. Use the remote-boot-agent "
-            f"to set up {config['mac']}."
-        )
-        return
-
     server = RemoteServer(
         mac=config["mac"],
         name=config["name"],

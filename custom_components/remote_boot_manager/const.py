@@ -4,6 +4,12 @@ from logging import Logger, getLogger
 
 LOGGER: Logger = getLogger(__package__)
 
+CONF_BOOTLOADER = "bootloader"
+CONF_BOOT_OPTIONS = "boot_options"
+CONF_TURN_OFF = "turn_off"
+
+DEFAULT_NAME = "Remote Boot Manager"
+
 DOMAIN = "remote_boot_manager"
 DOMAIN_DATA = f"{DOMAIN}.servers"
 

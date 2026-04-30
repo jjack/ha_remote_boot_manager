@@ -10,11 +10,19 @@ from aiohttp import web
 from homeassistant.const import (
     CONF_BROADCAST_ADDRESS,
     CONF_BROADCAST_PORT,
+    CONF_HOST,
     CONF_MAC,
+    CONF_NAME,
 )
 from homeassistant.helpers.device_registry import format_mac
 
-from .const import DOMAIN, LOGGER, WEBHOOK_MAX_PAYLOAD_BYTES
+from .const import (
+    CONF_BOOT_OPTIONS,
+    CONF_BOOTLOADER,
+    DOMAIN,
+    LOGGER,
+    WEBHOOK_MAX_PAYLOAD_BYTES,
+)
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -23,10 +31,10 @@ if TYPE_CHECKING:
 WEBHOOK_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_MAC): format_mac,
-        vol.Required("name"): cv.string,
-        vol.Optional("bootloader"): cv.string,
-        vol.Optional("boot_options"): vol.All(cv.ensure_list, [cv.string]),
-        vol.Optional("host"): cv.string,
+        vol.Required(CONF_NAME): cv.string,
+        vol.Optional(CONF_BOOTLOADER): cv.string,
+        vol.Optional(CONF_BOOT_OPTIONS): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(CONF_HOST): cv.string,
         vol.Optional(CONF_BROADCAST_ADDRESS): cv.string,
         vol.Optional(CONF_BROADCAST_PORT): cv.port,
     }
