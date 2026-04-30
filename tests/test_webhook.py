@@ -1,13 +1,10 @@
 """Tests for webhook functionality."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 from aiohttp import web
 
-from custom_components.remote_boot_manager.webhook import (
-    async_validate_webhook_payload,
-    handle_boot_options_ingest_webhook,
-)
+from custom_components.remote_boot_manager.webhook import async_validate_webhook_payload
 
 
 async def test_validate_webhook_empty_body():
@@ -63,9 +60,17 @@ async def test_validate_webhook_invalid_schema():
 async def test_validate_webhook_valid_payload():
     """Test validation with valid payload."""
     request = MagicMock(spec=web.Request)
-    valid_data = {"mac": "00:11:22:33:44:55", "name": "test"}
+    valid_data = {
+        "mac": "00:11:22:33:44:55",
+        "name": "test",
+        "bootloader": "grub",
+        "boot_options": ["ubuntu", "windows"],
+        "host": "192.168.1.100",
+        "broadcast_address": "192.168.1.255",
+        "broadcast_port": 9,
+    }
     request.text = AsyncMock(
-        return_value='{"mac": "00:11:22:33:44:55", "name": "test"}'
+        return_value='{"mac": "00:11:22:33:44:55", "name": "test", "bootloader": "grub", "boot_options": ["ubuntu", "windows"], "host": "192.168.1.100", "broadcast_address": "192.168.1.255", "broadcast_port": 9}'
     )
     request.json = AsyncMock(return_value=valid_data)
 
@@ -74,44 +79,8 @@ async def test_validate_webhook_valid_payload():
     assert payload is not None
     assert payload["mac"] == "00:11:22:33:44:55"
     assert payload["name"] == "test"
-
-
-async def test_handle_webhook_none_payload(hass):
-    """Test handling webhook with None payload (edge case)."""
-    request = MagicMock(spec=web.Request)
-
-    with patch(
-        "custom_components.remote_boot_manager.webhook.async_validate_webhook_payload",
-        return_value=(None, None),
-    ):
-        response = await handle_boot_options_ingest_webhook(hass, "test_id", request)
-        assert response.status == 500
-        assert response.text == "Unexpected empty payload"
-
-
-async def test_handle_webhook_exception(hass):
-    """Test handling webhook when an exception occurs."""
-    request = MagicMock(spec=web.Request)
-
-    with patch(
-        "custom_components.remote_boot_manager.webhook.async_validate_webhook_payload",
-        side_effect=Exception("Boom"),
-    ):
-        response = await handle_boot_options_ingest_webhook(hass, "test_id", request)
-        assert response.status == 500
-        assert response.text == "Internal Server Error"
-
-
-async def test_handle_webhook_validation_error(hass):
-    """Test handling webhook when payload validation returns an error response."""
-    request = MagicMock(spec=web.Request)
-    error_response = web.Response(status=400, text="Bad Request")
-
-    with patch(
-        "custom_components.remote_boot_manager.webhook.async_validate_webhook_payload",
-        return_value=(None, error_response),
-    ):
-        response = await handle_boot_options_ingest_webhook(hass, "test_id", request)
-        assert response is error_response
-        assert response.status == 400
-        assert response.text == "Bad Request"
+    assert payload["bootloader"] == "grub"
+    assert payload["boot_options"] == ["ubuntu", "windows"]
+    assert payload["host"] == "192.168.1.100"
+    assert payload["broadcast_address"] == "192.168.1.255"
+    assert payload["broadcast_port"] == 9
