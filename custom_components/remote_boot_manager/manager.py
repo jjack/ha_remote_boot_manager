@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.const import CONF_BROADCAST_ADDRESS, CONF_BROADCAST_PORT
@@ -24,6 +25,30 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
 
+@dataclass(slots=True)
+class RemoteServer:
+    """Represents the state of a remote bare-metal server."""
+
+    mac: str
+    hostname: str
+    bootloader: str
+    boot_options: list[str] = field(default_factory=list)
+    next_boot_option: str = "None"
+    broadcast_address: str | None = None
+    broadcast_port: int | None = None
+
+    def update_from_payload(self, payload: dict[str, Any]) -> None:
+        """Safely update the server state from incoming webhook data."""
+        self.hostname = payload.get("hostname", self.hostname)
+        self.bootloader = payload.get("bootloader", self.bootloader)
+        self.boot_options = payload.get("boot_options", self.boot_options)
+
+        if "broadcast_address" in payload:
+            self.broadcast_address = payload["broadcast_address"]
+        if "broadcast_port" in payload:
+            self.broadcast_port = payload["broadcast_port"]
+
+
 class RemoteBootManager:
     """Class to manage remote boot options."""
 
@@ -33,19 +58,7 @@ class RemoteBootManager:
 
         self._listeners: list[Callable] = []
 
-        """
-        In-memory dict to hold server information, keyed by mac to ensure uniqueness
-
-          { "mac": {
-              "hostname":        "server1",
-              "broadcast_address": "192.168.1.255",
-              "broadcast_port":   9,
-              "bootloader":  "grub",
-              "boot_options":     ["ubuntu", "windows"],
-              "next_boot_option": "(none)"
-          }
-        """
-        self.servers: dict[str, Any] = {}
+        self.servers: dict[str, RemoteServer] = {}
         self._store = Store(hass, 1, f"{DOMAIN}.servers")
 
     async def async_load(self) -> None:
@@ -93,65 +106,73 @@ class RemoteBootManager:
             update_callback()
 
     @callback
-    def async_process_webhook_payload(self, mac_address: str, payload: dict) -> None:
+    def async_process_webhook_payload(
+        self, mac_address: str, payload: dict[str, Any]
+    ) -> None:
         """Process payloads from the bare-metal GO agents."""
-        hostname = payload["hostname"]
-        boot_options = payload["boot_options"]
-        bootloader = payload["bootloader"]
-        broadcast_address = payload.get(CONF_BROADCAST_ADDRESS)
-        broadcast_port = payload.get(CONF_BROADCAST_PORT)
-
         is_new_server = mac_address not in self.servers
         if is_new_server:
-            next_boot_option = DEFAULT_BOOT_OPTION_NONE
-            LOGGER.info("Discovered new server: %s (%s)", hostname, mac_address)
-        else:
-            next_boot_option = self.servers[mac_address].get(
-                "next_boot_option", DEFAULT_BOOT_OPTION_NONE
+            self.servers[mac_address] = RemoteServer(
+                mac=mac_address,
+                hostname=payload["hostname"],
+                bootloader=payload["bootloader"],
+                boot_options=payload["boot_options"],
+                broadcast_address=payload.get(CONF_BROADCAST_ADDRESS),
+                broadcast_port=payload.get(CONF_BROADCAST_PORT),
             )
-            old_hostname = self.servers[mac_address]["hostname"]
+
+            LOGGER.info(
+                "Discovered new server: %s (%s)",
+                self.servers[mac_address].hostname,
+                mac_address,
+            )
+        else:
+            old_hostname = self.servers[mac_address].hostname
+
+            self.servers[mac_address].update_from_payload(payload)
 
             # Update the HA device registry so the entity name updates in the UI
-            if old_hostname != hostname:
+            if old_hostname != self.servers[mac_address].hostname:
                 LOGGER.info(
-                    "Server renamed: %s -> %s (%s)", old_hostname, hostname, mac_address
+                    "Server renamed: %s -> %s (%s)",
+                    old_hostname,
+                    self.servers[mac_address].hostname,
+                    mac_address,
                 )
                 device_reg = dr.async_get(self.hass)
                 device = device_reg.async_get_device(
                     identifiers={(DOMAIN, mac_address)}
                 )
                 if device:
-                    device_reg.async_update_device(device.id, name=hostname)
+                    device_reg.async_update_device(
+                        device.id, name=self.servers[mac_address].hostname
+                    )
             else:
                 LOGGER.info(
                     "Received update for server: %s (%s) - boot options: %s",
-                    hostname,
+                    self.servers[mac_address].hostname,
                     mac_address,
-                    boot_options,
+                    self.servers[mac_address].boot_options,
                 )
 
-        self.servers[mac_address] = {
-            "hostname": hostname,
-            "bootloader": bootloader,
-            "boot_options": [],
-            "next_boot_option": next_boot_option,
-            CONF_BROADCAST_ADDRESS: broadcast_address,
-            CONF_BROADCAST_PORT: broadcast_port,
-        }
-
         # add "(none)" option to the front of the list if it's not already there
-        if boot_options and boot_options[0] != DEFAULT_BOOT_OPTION_NONE:
-            boot_options = [DEFAULT_BOOT_OPTION_NONE, *boot_options]
+        if (
+            self.servers[mac_address].boot_options
+            and self.servers[mac_address].boot_options[0] != DEFAULT_BOOT_OPTION_NONE
+        ):
+            boot_options = [
+                DEFAULT_BOOT_OPTION_NONE,
+                *self.servers[mac_address].boot_options,
+            ]
 
-        self.servers[mac_address]["boot_options"] = boot_options
+        self.servers[mac_address].boot_options = boot_options
 
         # If the selected boot option is no longer in the list, reset it
         if (
-            self.servers[mac_address]["next_boot_option"] not in boot_options
-            and self.servers[mac_address]["next_boot_option"]
-            != DEFAULT_BOOT_OPTION_NONE
+            self.servers[mac_address].next_boot_option not in boot_options
+            and self.servers[mac_address].next_boot_option != DEFAULT_BOOT_OPTION_NONE
         ):
-            self.servers[mac_address]["next_boot_option"] = DEFAULT_BOOT_OPTION_NONE
+            self.servers[mac_address].next_boot_option = DEFAULT_BOOT_OPTION_NONE
 
         if is_new_server:
             async_dispatcher_send(self.hass, SIGNAL_NEW_SERVER, mac_address)
@@ -166,7 +187,7 @@ class RemoteBootManager:
     ) -> None:
         """Notify listeners that the selected boot option has changed."""
         if mac_address in self.servers:
-            self.servers[mac_address]["next_boot_option"] = next_boot_option
+            self.servers[mac_address].next_boot_option = next_boot_option
             self._save()
             self._notify_listeners()
             LOGGER.debug(
@@ -186,8 +207,8 @@ class RemoteBootManager:
 
         # grab the selected boot option and reset the state for next boot to
         # prevent boot loops
-        next_boot_option = self.servers[mac_address]["next_boot_option"]
-        self.servers[mac_address]["next_boot_option"] = DEFAULT_BOOT_OPTION_NONE
+        next_boot_option = self.servers[mac_address].next_boot_option
+        self.servers[mac_address].next_boot_option = DEFAULT_BOOT_OPTION_NONE
         self._save()
 
         # Notify UI to revert the dropdown back to "(none)"

@@ -11,10 +11,6 @@ from homeassistant.components.button import (
     ButtonEntity,
     ButtonEntityDescription,
 )
-from homeassistant.const import (
-    CONF_BROADCAST_ADDRESS,
-    CONF_BROADCAST_PORT,
-)
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -78,12 +74,12 @@ class RemoteBootManagerButton(ButtonEntity):
         self._attr_name = "Wake Server"
         self._attr_has_entity_name = True
 
-        server_data = self.manager.servers.get(mac_address, {})
+        server_data = self.manager.servers[mac_address]
 
         broadcast_info = []
-        if b_addr := server_data.get(CONF_BROADCAST_ADDRESS):
+        if b_addr := server_data.broadcast_address:
             broadcast_info.append(f"IP: {b_addr}")
-        if b_port := server_data.get(CONF_BROADCAST_PORT):
+        if b_port := server_data.broadcast_port:
             broadcast_info.append(f"Port: {b_port}")
 
         model_name = (
@@ -94,7 +90,7 @@ class RemoteBootManagerButton(ButtonEntity):
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, mac_address)},
-            name=server_data.get("hostname"),
+            name=server_data.hostname,
             manufacturer="Remote Boot Manager",
             model=model_name,
             connections={(CONNECTION_NETWORK_MAC, mac_address)},
@@ -103,11 +99,13 @@ class RemoteBootManagerButton(ButtonEntity):
     async def async_press(self) -> None:
         """Handle the button press."""
         kwargs = {}
-        server = self.manager.servers.get(self.mac_address, {})
+        server = self.manager.servers.get(self.mac_address)
+        if not server:
+            return
 
-        if broadcast_address := server.get(CONF_BROADCAST_ADDRESS):
+        if broadcast_address := server.broadcast_address:
             kwargs["ip_address"] = broadcast_address
-        if broadcast_port := server.get(CONF_BROADCAST_PORT):
+        if broadcast_port := server.broadcast_port:
             kwargs["port"] = broadcast_port
 
         # wakeonlan is blocking, so it needs run in the executor queue

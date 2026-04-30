@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
-from homeassistant.const import CONF_BROADCAST_ADDRESS, CONF_BROADCAST_PORT
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import (
     CONNECTION_NETWORK_MAC,
@@ -69,12 +68,12 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
         self._attr_name = "Next Boot Option"
         self._attr_has_entity_name = True
 
-        server_data = self.manager.servers.get(mac_address, {})
+        server_data = self.manager.servers[mac_address]
 
         broadcast_info = []
-        if broadcast_address := server_data.get(CONF_BROADCAST_ADDRESS):
+        if broadcast_address := server_data.broadcast_address:
             broadcast_info.append(f"Broadcast: {broadcast_address}")
-        if broadcast_port := server_data.get(CONF_BROADCAST_PORT):
+        if broadcast_port := server_data.broadcast_port:
             broadcast_info.append(f"Port: {broadcast_port}")
 
         model_name = (
@@ -85,7 +84,7 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, mac_address)},
-            name=server_data.get("hostname"),
+            name=server_data.hostname,
             manufacturer="Remote Boot Manager",
             model=model_name,
             connections={(CONNECTION_NETWORK_MAC, mac_address)},
@@ -94,8 +93,8 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
     @property
     def options(self) -> list[str]:
         """Return the list of available boot options."""
-        server_data = self.manager.servers.get(self.mac_address, {})
-        opts = server_data.get("boot_options", [])
+        server_data = self.manager.servers.get(self.mac_address)
+        opts = server_data.boot_options if server_data else []
 
         # Ensure the default "(none)" is always a valid option
         if DEFAULT_BOOT_OPTION_NONE not in opts:
@@ -106,8 +105,8 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
     @property
     def current_option(self) -> str | None:
         """Return the currently pending boot option."""
-        server_data = self.manager.servers.get(self.mac_address, {})
-        return server_data.get("next_boot_option", DEFAULT_BOOT_OPTION_NONE)
+        server_data = self.manager.servers.get(self.mac_address)
+        return server_data.next_boot_option if server_data else DEFAULT_BOOT_OPTION_NONE
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
