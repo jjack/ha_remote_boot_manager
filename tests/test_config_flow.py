@@ -5,7 +5,6 @@ from unittest.mock import patch
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.remote_boot_manager.const import DOMAIN
@@ -95,36 +94,3 @@ async def test_reconfigure_flow(hass: HomeAssistant) -> None:
     assert result3.get("type") == FlowResultType.ABORT
     assert result3.get("reason") == "reconfigure_successful"
     assert entry.data["webhook_id"] == "new_id"
-
-
-async def test_import_flow(hass: HomeAssistant) -> None:
-    """Test import from configuration.yaml."""
-    assert await async_setup_component(hass, "http", {})
-    with patch(
-        "custom_components.remote_boot_manager.async_setup_entry", return_value=True
-    ) as mock_setup_entry:
-        assert await async_setup_component(hass, DOMAIN, {DOMAIN: {}})
-        await hass.async_block_till_done()
-
-        assert len(hass.config_entries.async_entries(DOMAIN)) == 1
-        entry = hass.config_entries.async_entries(DOMAIN)[0]
-        assert entry.source == config_entries.SOURCE_IMPORT
-        assert entry.data == {}
-        mock_setup_entry.assert_called_once()
-
-
-async def test_import_flow_already_configured(hass: HomeAssistant) -> None:
-    """Test import from configuration.yaml when an entry already exists."""
-    entry = MockConfigEntry(domain=DOMAIN, data={"webhook_id": "test_id"})
-    entry.add_to_hass(hass)
-
-    assert await async_setup_component(hass, "http", {})
-    assert await async_setup_component(hass, DOMAIN, {DOMAIN: {}})
-    await hass.async_block_till_done()
-
-    # The import flow should abort, so only the original entry should exist.
-    assert len(hass.config_entries.async_entries(DOMAIN)) == 1
-    assert (
-        hass.config_entries.async_entries(DOMAIN)[0].source
-        != config_entries.SOURCE_IMPORT
-    )

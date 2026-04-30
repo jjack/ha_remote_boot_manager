@@ -100,3 +100,18 @@ async def test_handle_webhook_exception(hass):
         response = await handle_boot_options_ingest_webhook(hass, "test_id", request)
         assert response.status == 500
         assert response.text == "Internal Server Error"
+
+
+async def test_handle_webhook_validation_error(hass):
+    """Test handling webhook when payload validation returns an error response."""
+    request = MagicMock(spec=web.Request)
+    error_response = web.Response(status=400, text="Bad Request")
+
+    with patch(
+        "custom_components.remote_boot_manager.webhook.async_validate_webhook_payload",
+        return_value=(None, error_response),
+    ):
+        response = await handle_boot_options_ingest_webhook(hass, "test_id", request)
+        assert response is error_response
+        assert response.status == 400
+        assert response.text == "Bad Request"
