@@ -1,0 +1,142 @@
+"""Tests for Remote Boot Manager select platform."""
+
+from unittest.mock import MagicMock, patch
+
+from homeassistant.core import State
+
+from custom_components.remote_boot_manager.const import DEFAULT_BOOT_OPTION_NONE
+from custom_components.remote_boot_manager.manager import RemoteServer
+from custom_components.remote_boot_manager.select import (
+    RemoteBootManagerSelect,
+    async_setup_entry,
+)
+
+
+async def test_async_setup_entry(hass):
+    """Test the setup entry logic, including the dispatcher connection."""
+    mock_entry = MagicMock()
+    mock_manager = MagicMock()
+    mock_manager.servers = {"00:11:22:33:44:55": MagicMock()}
+    mock_entry.runtime_data = mock_manager
+    async_add_entities = MagicMock()
+
+    with patch(
+        "custom_components.remote_boot_manager.select.async_dispatcher_connect"
+    ) as mock_connect:
+        await async_setup_entry(hass, mock_entry, async_add_entities)
+
+        assert async_add_entities.call_count == 1
+        mock_connect.assert_called_once()
+        mock_entry.async_on_unload.assert_called_once()
+
+        # Verify the dispatcher callback adds the new entity
+        callback = mock_connect.call_args[0][2]
+        mock_manager.servers["AA:BB:CC:DD:EE:FF"] = MagicMock()
+        callback("AA:BB:CC:DD:EE:FF")
+        assert async_add_entities.call_count == 2
+
+
+async def test_select_init_model_name(hass):
+    """Test the select entity initialization and model name generation."""
+    manager = MagicMock()
+
+    # With broadcast info
+    manager.servers = {
+        "00:11:22:33:44:55": RemoteServer(
+            mac="00:11:22:33:44:55",
+            name="Test Server",
+            broadcast_address="192.168.1.255",
+            broadcast_port=9,
+        )
+    }
+    select = RemoteBootManagerSelect(manager, "00:11:22:33:44:55")
+    assert select.device_info is not None
+    assert (
+        select.device_info.get("model")
+        == "Wake-on-LAN (Broadcast: 192.168.1.255, Port: 9)"
+    )
+
+    # Without broadcast info
+    manager.servers = {
+        "AA:BB:CC:DD:EE:FF": RemoteServer(
+            mac="AA:BB:CC:DD:EE:FF",
+            name="Test Server 2",
+        )
+    }
+    select2 = RemoteBootManagerSelect(manager, "AA:BB:CC:DD:EE:FF")
+    assert select2.device_info is not None
+    assert select2.device_info.get("model") == "Wake-on-LAN"
+
+
+async def test_select_properties(hass):
+    """Test the options and current_option properties."""
+    manager = MagicMock()
+    manager.servers = {
+        "00:11:22:33:44:55": RemoteServer(
+            mac="00:11:22:33:44:55",
+            name="Test",
+            boot_options=["ubuntu", "windows"],
+            next_boot_option="windows",
+        )
+    }
+    select = RemoteBootManagerSelect(manager, "00:11:22:33:44:55")
+
+    assert select.options == [DEFAULT_BOOT_OPTION_NONE, "ubuntu", "windows"]
+    assert select.current_option == "windows"
+
+    # Test fallback when server missing
+    select_missing = RemoteBootManagerSelect(manager, "00:11:22:33:44:55")
+    select_missing.mac_address = "missing"
+    assert select_missing.options == [DEFAULT_BOOT_OPTION_NONE]
+    assert select_missing.current_option == DEFAULT_BOOT_OPTION_NONE
+
+
+async def test_async_select_option(hass):
+    """Test selecting an option."""
+    manager = MagicMock()
+    manager.servers = {
+        "00:11:22:33:44:55": RemoteServer(
+            mac="00:11:22:33:44:55",
+            name="Test",
+        )
+    }
+    select = RemoteBootManagerSelect(manager, "00:11:22:33:44:55")
+
+    await select.async_select_option("ubuntu")
+    manager.async_set_next_boot_option.assert_called_once_with(
+        "00:11:22:33:44:55", "ubuntu"
+    )
+
+
+async def test_async_added_to_hass_restore_state(hass):
+    """Test restoring state when added to hass."""
+    manager = MagicMock()
+    manager.servers = {
+        "00:11:22:33:44:55": RemoteServer(
+            mac="00:11:22:33:44:55",
+            name="Test",
+            boot_options=[DEFAULT_BOOT_OPTION_NONE, "ubuntu"],
+        )
+    }
+    select = RemoteBootManagerSelect(manager, "00:11:22:33:44:55")
+    select.hass = hass
+
+    with (
+        patch(
+            "custom_components.remote_boot_manager.select.RestoreEntity.async_get_last_state",
+            side_effect=[
+                State("select.test", "ubuntu"),
+                State("select.test", "invalid_os"),
+            ],
+        ),
+        patch(
+            "custom_components.remote_boot_manager.select.RestoreEntity.async_added_to_hass"
+        ),
+    ):
+        # Should restore the valid state and ignore the invalid state
+        await select.async_added_to_hass()
+        manager.async_set_next_boot_option.assert_called_once_with(
+            "00:11:22:33:44:55", "ubuntu"
+        )
+        await select.async_added_to_hass()
+        assert manager.async_set_next_boot_option.call_count == 1

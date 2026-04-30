@@ -30,23 +30,26 @@ class RemoteServer:
     """Represents the state of a remote bare-metal server."""
 
     mac: str
-    hostname: str
-    bootloader: str
+    name: str
+    host: str | None = None
+    bootloader: str | None = None
     boot_options: list[str] = field(default_factory=list)
-    next_boot_option: str = "None"
     broadcast_address: str | None = None
     broadcast_port: int | None = None
 
+    # this comes from the UI, not the webhook
+    next_boot_option: str = DEFAULT_BOOT_OPTION_NONE
+
     def update_from_payload(self, payload: dict[str, Any]) -> None:
         """Safely update the server state from incoming webhook data."""
-        self.hostname = payload.get("hostname", self.hostname)
+        self.name = payload.get("name", self.name)
         self.bootloader = payload.get("bootloader", self.bootloader)
-        self.boot_options = payload.get("boot_options", self.boot_options)
-
-        if "broadcast_address" in payload:
-            self.broadcast_address = payload["broadcast_address"]
-        if "broadcast_port" in payload:
-            self.broadcast_port = payload["broadcast_port"]
+        self.boot_options = payload.get("boot_options", self.boot_options) or []
+        self.host = payload.get("host", self.host)
+        self.broadcast_address = payload.get(
+            CONF_BROADCAST_ADDRESS, self.broadcast_address
+        )
+        self.broadcast_port = payload.get(CONF_BROADCAST_PORT, self.broadcast_port)
 
 
 class RemoteBootManager:
@@ -114,29 +117,30 @@ class RemoteBootManager:
         if is_new_server:
             self.servers[mac_address] = RemoteServer(
                 mac=mac_address,
-                hostname=payload["hostname"],
-                bootloader=payload["bootloader"],
-                boot_options=payload["boot_options"],
+                name=payload["name"],
+                bootloader=payload.get("bootloader"),
+                boot_options=payload.get("boot_options") or [],
+                host=payload.get("host"),
                 broadcast_address=payload.get(CONF_BROADCAST_ADDRESS),
                 broadcast_port=payload.get(CONF_BROADCAST_PORT),
             )
 
             LOGGER.info(
                 "Discovered new server: %s (%s)",
-                self.servers[mac_address].hostname,
+                self.servers[mac_address].name,
                 mac_address,
             )
         else:
-            old_hostname = self.servers[mac_address].hostname
+            old_name = self.servers[mac_address].name
 
             self.servers[mac_address].update_from_payload(payload)
 
             # Update the HA device registry so the entity name updates in the UI
-            if old_hostname != self.servers[mac_address].hostname:
+            if old_name != self.servers[mac_address].name:
                 LOGGER.info(
                     "Server renamed: %s -> %s (%s)",
-                    old_hostname,
-                    self.servers[mac_address].hostname,
+                    old_name,
+                    self.servers[mac_address].name,
                     mac_address,
                 )
                 device_reg = dr.async_get(self.hass)
@@ -145,25 +149,25 @@ class RemoteBootManager:
                 )
                 if device:
                     device_reg.async_update_device(
-                        device.id, name=self.servers[mac_address].hostname
+                        device.id, name=self.servers[mac_address].name
                     )
             else:
                 LOGGER.info(
                     "Received update for server: %s (%s) - boot options: %s",
-                    self.servers[mac_address].hostname,
+                    self.servers[mac_address].name,
                     mac_address,
                     self.servers[mac_address].boot_options,
                 )
 
         # add "(none)" option to the front of the list if it's not already there
-        if (
-            self.servers[mac_address].boot_options
-            and self.servers[mac_address].boot_options[0] != DEFAULT_BOOT_OPTION_NONE
-        ):
-            boot_options = [
-                DEFAULT_BOOT_OPTION_NONE,
-                *self.servers[mac_address].boot_options,
-            ]
+        current_options = self.servers[mac_address].boot_options
+        if not current_options:
+            boot_options = [DEFAULT_BOOT_OPTION_NONE]
+        elif current_options[0] != DEFAULT_BOOT_OPTION_NONE:
+            boot_options = [DEFAULT_BOOT_OPTION_NONE, *current_options]
+        else:
+            # It's already in the correct format
+            boot_options = current_options
 
         self.servers[mac_address].boot_options = boot_options
 

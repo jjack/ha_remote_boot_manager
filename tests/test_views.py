@@ -58,7 +58,7 @@ async def test_bootloader_view_unsupported_bootloader(hass: HomeAssistant) -> No
     mock_manager.servers = {
         "aa:bb:cc:dd:ee:ff": RemoteServer(
             mac="aa:bb:cc:dd:ee:ff",
-            hostname="test",
+            name="test",
             bootloader="unsupported",
         )
     }
@@ -84,7 +84,7 @@ async def test_bootloader_view_exception(hass: HomeAssistant) -> None:
     mock_manager.servers = {
         "aa:bb:cc:dd:ee:ff": RemoteServer(
             mac="aa:bb:cc:dd:ee:ff",
-            hostname="test",
+            name="test",
             bootloader="grub",
         )
     }

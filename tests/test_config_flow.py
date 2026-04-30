@@ -7,9 +7,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.remote_boot_manager.config_flow import (
-    RemoteBootManagerFlowHandler,
-)
 from custom_components.remote_boot_manager.const import DOMAIN
 
 
@@ -53,18 +50,6 @@ async def test_single_instance_allowed(hass: HomeAssistant) -> None:
 
     assert result.get("type") == FlowResultType.ABORT
     assert result.get("reason") == "single_instance_allowed"
-
-
-async def test_webhook_generation_failed(hass: HomeAssistant) -> None:
-    """Test when webhook ID is not set."""
-    flow = config_entries.HANDLERS[DOMAIN]()
-    flow = RemoteBootManagerFlowHandler()
-    flow.hass = hass
-    # _webhook_id is None by default
-    result = await flow.async_step_webhook_info()
-
-    assert result.get("type") == FlowResultType.ABORT
-    assert result.get("reason") == "webhook_id_generation_failed"
 
 
 async def test_reconfigure_flow(hass: HomeAssistant) -> None:

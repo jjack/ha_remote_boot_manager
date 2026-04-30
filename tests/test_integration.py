@@ -25,6 +25,7 @@ def mock_config_entry():
 @pytest.fixture
 async def setup_integration(hass: HomeAssistant, hass_client, mock_config_entry):
     """Set up the integration and return the web client."""
+    assert await async_setup_component(hass, "homeassistant", {})
     assert await async_setup_component(hass, "http", {})
     assert await async_setup_component(hass, "webhook", {})
     await hass.async_block_till_done()
@@ -45,7 +46,7 @@ async def discovered_client(hass: HomeAssistant, setup_integration):
     webhook_url = "/api/webhook/test_webhook_id"
     payload = {
         "mac": "aa:bb:cc:dd:ee:ff",
-        "hostname": "test-server",
+        "name": "test-server",
         "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
     }
@@ -61,7 +62,7 @@ async def test_webhook_discovery(hass: HomeAssistant, setup_integration) -> None
     webhook_url = "/api/webhook/test_webhook_id"
     payload = {
         "mac": "aa:bb:cc:dd:ee:ff",
-        "hostname": "test-server",
+        "name": "test-server",
         "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
     }
@@ -71,14 +72,69 @@ async def test_webhook_discovery(hass: HomeAssistant, setup_integration) -> None
     await hass.async_block_till_done()
 
     entity_id_select = "select.test_server_next_boot_option"
-    entity_id_button = "button.test_server_wake_server"
+    entity_id_switch = "switch.test_server"
 
     state = hass.states.get(entity_id_select)
     assert state is not None
     assert state.state == DEFAULT_BOOT_OPTION_NONE
 
-    state = hass.states.get(entity_id_button)
+    state = hass.states.get(entity_id_switch)
     assert state is not None
+
+
+async def test_minimal_webhook_discovery_and_switch(
+    hass: HomeAssistant, setup_integration
+) -> None:
+    """Test discovery and switch functionality with a minimal payload (mac and name)."""
+    client = setup_integration
+    webhook_url = "/api/webhook/test_webhook_id"
+    payload = {"mac": "de:ad:be:ef:00:01", "name": "minimal-server"}
+
+    resp = await client.post(webhook_url, json=payload)
+    assert resp.status == 200
+    await hass.async_block_till_done()
+
+    # Verify entities are created
+    entity_id_switch = "switch.minimal_server"
+    entity_id_select = "select.minimal_server_next_boot_option"
+
+    assert hass.states.get(entity_id_switch) is not None
+    select_state = hass.states.get(entity_id_select)
+    assert select_state is not None
+    assert select_state.attributes.get("options") == [DEFAULT_BOOT_OPTION_NONE]
+
+    # Verify the switch works by calling turn_on
+    with patch(
+        "custom_components.remote_boot_manager.switch.wakeonlan.send_magic_packet"
+    ) as mock_wake:
+        await hass.services.async_call(
+            "switch", "turn_on", {"entity_id": entity_id_switch}, blocking=True
+        )
+        # With no broadcast args, it should be called with just the MAC
+        mock_wake.assert_called_once_with("de:ad:be:ef:00:01")
+
+
+async def test_webhook_with_host_enables_polling(
+    hass: HomeAssistant, setup_integration
+) -> None:
+    """Test that a payload with a host enables switch polling."""
+    client = setup_integration
+    webhook_url = "/api/webhook/test_webhook_id"
+    payload = {"mac": "de:ad:be:ef:00:02", "name": "ping-server", "host": "127.0.0.1"}
+    await client.post(webhook_url, json=payload)
+    await hass.async_block_till_done()
+
+    with patch(
+        "custom_components.remote_boot_manager.switch._async_ping_host",
+        return_value=True,
+    ) as mock_ping:
+        await hass.services.async_call(
+            "homeassistant",
+            "update_entity",
+            {"entity_id": "switch.ping_server"},
+            blocking=True,
+        )
+        mock_ping.assert_called_once_with("127.0.0.1")
 
 
 async def test_select_and_bootloader_view(
@@ -105,12 +161,12 @@ async def test_select_and_bootloader_view(
     assert 'grub-reboot "ubuntu"' in text or "ubuntu" in text
 
 
-async def test_button_press_resets_boot_option(
+async def test_switch_turn_on_resets_boot_option(
     hass: HomeAssistant, discovered_client
 ) -> None:
-    """Test that pressing the wake server button sends magic packet and resets boot option."""
+    """Test that turning on the wake server switch sends magic packet and resets boot option."""
     entity_id_select = "select.test_server_next_boot_option"
-    entity_id_button = "button.test_server_wake_server"
+    entity_id_switch = "switch.test_server"
 
     # First, select a boot option
     await hass.services.async_call(
@@ -123,12 +179,14 @@ async def test_button_press_resets_boot_option(
     assert state is not None
     assert state.state == "windows"
 
-    # Next, press the button
-    with patch("wakeonlan.send_magic_packet") as mock_wake:
+    # Next, turn on the switch
+    with patch(
+        "custom_components.remote_boot_manager.switch.wakeonlan.send_magic_packet"
+    ) as mock_wake:
         await hass.services.async_call(
-            "button",
-            "press",
-            {"entity_id": entity_id_button},
+            "switch",
+            "turn_on",
+            {"entity_id": entity_id_switch},
             blocking=True,
         )
         await hass.async_block_till_done()
@@ -145,18 +203,41 @@ async def test_remove_integration_cleans_up(
 ) -> None:
     """Test that removing the integration cleans up devices and entities."""
     entity_id_select = "select.test_server_next_boot_option"
-    entity_id_button = "button.test_server_wake_server"
+    entity_id_switch = "switch.test_server"
 
     assert await hass.config_entries.async_remove(mock_config_entry.entry_id)
     await hass.async_block_till_done()
 
     assert hass.states.get(entity_id_select) is None
-    assert hass.states.get(entity_id_button) is None
+    assert hass.states.get(entity_id_switch) is None
 
     er = async_get_er(hass)
     dr = async_get_dr(hass)
     assert er.async_get(entity_id_select) is None
-    assert er.async_get(entity_id_button) is None
+    assert er.async_get(entity_id_switch) is None
 
     device = dr.async_get_device(identifiers={(DOMAIN, "aa:bb:cc:dd:ee:ff")})
     assert device is None
+
+
+async def test_global_send_magic_packet_service(
+    hass: HomeAssistant, setup_integration
+) -> None:
+    """Test that the global send_magic_packet service works."""
+    with patch(
+        "custom_components.remote_boot_manager.__init__.wakeonlan.send_magic_packet"
+    ) as mock_wake:
+        await hass.services.async_call(
+            DOMAIN,
+            "send_magic_packet",
+            {
+                "mac": "aa:bb:cc:dd:ee:ff",
+                "broadcast_address": "192.168.1.255",
+                "broadcast_port": 9,
+            },
+            blocking=True,
+        )
+        await hass.async_block_till_done()
+        mock_wake.assert_called_once_with(
+            "aa:bb:cc:dd:ee:ff", ip_address="192.168.1.255", port=9
+        )

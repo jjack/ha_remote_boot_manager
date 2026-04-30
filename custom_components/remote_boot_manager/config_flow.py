@@ -17,7 +17,7 @@ class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize the config flow."""
-        self._webhook_id: str | None = None
+        self._webhook_id: str = ""
 
     async def async_step_user(
         self,
@@ -28,9 +28,8 @@ class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="single_instance_allowed")
 
         integration = async_get_loaded_integration(self.hass, DOMAIN)
-        assert integration.documentation is not None, (  # noqa: S101
-            "Integration documentation URL is not set in manifest.json"
-        )
+        if integration.documentation is None:
+            return self.async_abort(reason="missing_documentation")
 
         if user_input is not None:
             self._webhook_id = webhook.async_generate_id()
@@ -50,9 +49,6 @@ class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         user_input: dict | None = None,
     ) -> config_entries.ConfigFlowResult:
         """Show the generated webhook ID to the user."""
-        if self._webhook_id is None:
-            return self.async_abort(reason="webhook_id_generation_failed")
-
         if user_input is not None:
             return self.async_create_entry(
                 title="Remote Boot Manager", data={"webhook_id": self._webhook_id}
@@ -88,9 +84,6 @@ class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         user_input: dict | None = None,
     ) -> config_entries.ConfigFlowResult:
         """Show the new webhook ID to the user."""
-        if self._webhook_id is None:
-            return self.async_abort(reason="webhook_id_generation_failed")
-
         if user_input is not None:
             return self.async_update_reload_and_abort(
                 self._get_reconfigure_entry(),

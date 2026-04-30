@@ -24,8 +24,7 @@
             "unknown": "Unknown error occurred."
         },
         "abort": {
-            "already_configured": "This entry is already configured.",
-            "webhook_id_generation_failed": "Failed to generate Webhook ID. Please restart the setup process."
+            "already_configured": "This entry is already configured."
         }
     }
 }

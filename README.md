@@ -7,7 +7,8 @@ This integration works in tandem with the [Remote Boot Agent](https://github.com
 ## Features
 * **Dynamic OS Discovery**: Servers automatically report their available OS list (e.g., Ubuntu, Windows) to Home Assistant.
 * **Next Boot Selection**: Change the next boot OS via a dropdown `select` entity.
-* **Wake-on-LAN**: Wake up sleeping servers via a `button` entity.
+* **Wake-on-LAN**: Wake up sleeping servers and track their power state via a `switch` entity.
+* **Drop-in Wake-on-LAN Replacement**: Exposes a `remote_boot_manager.send_magic_packet` service that can be used directly in automations, mimicking the official HA integration.
 * **Bootloader Integration**: Exposes an endpoint for GRUB (or other bootloaders) to fetch the selected OS and automatically reset to prevent boot loops.
 * **Secure Webhooks**: Uses auto-generated, secure webhooks for agent-to-HA communication.
 

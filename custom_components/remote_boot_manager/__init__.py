@@ -7,60 +7,46 @@ https://github.com/jjack/hass-remote-boot-manager
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from functools import partial
+from typing import TYPE_CHECKING, Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from aiohttp import web
-from homeassistant.components import webhook
+import wakeonlan
+from homeassistant.components import webhook as ha_webhook
 from homeassistant.const import (
     CONF_BROADCAST_ADDRESS,
     CONF_BROADCAST_PORT,
     CONF_MAC,
     Platform,
 )
-from homeassistant.helpers.device_registry import DeviceEntry, format_mac
 from homeassistant.helpers.storage import Store
 
-from .const import DOMAIN, LOGGER, WEBHOOK_MAX_PAYLOAD_BYTES, WEBHOOK_NAME
+from .const import DOMAIN, WEBHOOK_NAME
 from .manager import RemoteBootManager
 from .views import BootloaderView
+from .webhook import handle_boot_options_ingest_webhook
 
 if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
+    from homeassistant.core import HomeAssistant, ServiceCall
+    from homeassistant.helpers.device_registry import DeviceEntry
 
     from .data import RemoteBootManagerConfigEntry
 
-PLATFORMS: list[Platform] = [
-    Platform.BUTTON,
-    Platform.SELECT,
-]
+SERVICE_SEND_MAGIC_PACKET = "send_magic_packet"
 
-
-def coerce_mac_address(value: str) -> str:
-    """Ensure a string is a valid, formatted MAC address."""
-    raw_mac = cv.string(value)
-    formatted_mac = format_mac(raw_mac)
-
-    if formatted_mac is None:
-        err_msg = f"'{value}' is not a valid MAC address format"
-        raise vol.Invalid(err_msg)
-
-    return formatted_mac
-
-
-WEBHOOK_SCHEMA = vol.Schema(
+WAKE_ON_LAN_SEND_MAGIC_PACKET_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_MAC): coerce_mac_address,
-        vol.Required("hostname"): cv.string,
-        vol.Required("bootloader"): cv.string,
-        vol.Required("boot_options"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Required(CONF_MAC): cv.string,
         vol.Optional(CONF_BROADCAST_ADDRESS): cv.string,
         vol.Optional(CONF_BROADCAST_PORT): cv.port,
     }
 )
 
-CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+PLATFORMS: list[Platform] = [
+    Platform.SWITCH,
+    Platform.SELECT,
+]
 
 
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
@@ -68,6 +54,26 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:  # n
     """Set up the remote_boot_manager component."""
     # Register the unauthenticated bootloader view API
     hass.http.register_view(BootloaderView())
+
+    async def send_magic_packet(call: ServiceCall) -> None:
+        """Send magic packet to wake up a device."""
+        mac_address = call.data[CONF_MAC]
+        kwargs = {}
+        if CONF_BROADCAST_ADDRESS in call.data:
+            kwargs["ip_address"] = call.data[CONF_BROADCAST_ADDRESS]
+        if CONF_BROADCAST_PORT in call.data:
+            kwargs["port"] = call.data[CONF_BROADCAST_PORT]
+
+        await hass.async_add_executor_job(
+            partial(wakeonlan.send_magic_packet, mac_address, **kwargs)
+        )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SEND_MAGIC_PACKET,
+        send_magic_packet,
+        schema=WAKE_ON_LAN_SEND_MAGIC_PACKET_SCHEMA,
+    )
 
     return True
 
@@ -84,7 +90,7 @@ async def async_setup_entry(
     # Register the webhook globally since it iterates over all entries
     webhook_id = entry.data.get("webhook_id")
     if webhook_id:
-        webhook.async_register(
+        ha_webhook.async_register(
             hass,
             DOMAIN,
             WEBHOOK_NAME,
@@ -104,7 +110,7 @@ async def async_unload_entry(
     """Handle removal of an entry."""
     webhook_id = entry.data.get("webhook_id")
     if webhook_id:
-        webhook.async_unregister(hass, webhook_id)
+        ha_webhook.async_unregister(hass, webhook_id)
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
@@ -114,74 +120,6 @@ async def async_reload_entry(
 ) -> None:
     """Reload config entry."""
     await hass.config_entries.async_reload(entry.entry_id)
-
-
-async def async_validate_webhook_payload(
-    request: web.Request,
-) -> tuple[dict[str, Any] | None, web.Response | None]:
-    """Validate and parse incoming webhook payload."""
-    body = await request.text()
-    if not body:
-        LOGGER.warning(
-            "Ignoring remote boot manager push request webhook with empty body"
-        )
-        return None, web.Response(status=400, text="empty body")
-
-    if len(body) > WEBHOOK_MAX_PAYLOAD_BYTES:
-        LOGGER.warning("Webhook payload too large")
-        return None, web.Response(status=413, text="Payload too large")
-
-    try:
-        raw_payload = await request.json()
-    except ValueError:
-        LOGGER.warning("Webhook payload is not valid JSON")
-        LOGGER.debug("Received invalid JSON payload: %s", body)
-        return None, web.Response(status=400, text="Invalid JSON payload")
-
-    LOGGER.debug("Received remote boot manager webhook with payload: %s", raw_payload)
-
-    try:
-        # Use cast to force the type checker to treat the output as a dict
-        payload = cast("dict[str, Any]", WEBHOOK_SCHEMA(raw_payload))
-    except vol.Invalid as err:
-        LOGGER.warning("Invalid webhook schema from incoming request: %s", err)
-        return None, web.Response(status=400, text=f"Invalid payload format: {err}")
-
-    return payload, None
-
-
-async def handle_boot_options_ingest_webhook(
-    hass: HomeAssistant, _webhook_id: str, request: web.Request
-) -> web.Response:
-    """Handle incoming boot options push requests from bare-metal Go agents."""
-    try:
-        payload, error_response = await async_validate_webhook_payload(request)
-        if error_response:
-            return error_response
-
-        if payload is None:
-            return web.Response(status=500, text="Unexpected empty payload")
-
-        # Find our manager instance from the active config entries
-        manager_found = False
-        mac_address = payload.get(CONF_MAC)
-        for entry in hass.config_entries.async_entries(DOMAIN):
-            LOGGER.debug(
-                "Checking config entry %s for webhook payload processing",
-                entry.entry_id,
-            )
-            if hasattr(entry, "runtime_data") and entry.runtime_data:
-                entry.runtime_data.async_process_webhook_payload(mac_address, payload)
-                manager_found = True
-                break
-
-        if not manager_found:
-            return web.Response(status=503, text="Integration not ready")
-
-        return web.Response(status=200, text="OK")
-    except Exception as err:  # noqa: BLE001
-        LOGGER.error("Failed to process webhook: %s", err)
-        return web.Response(status=500, text="Internal Server Error")
 
 
 async def async_remove_entry(

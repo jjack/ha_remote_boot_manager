@@ -84,7 +84,7 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, mac_address)},
-            name=server_data.hostname,
+            name=server_data.name,
             manufacturer="Remote Boot Manager",
             model=model_name,
             connections={(CONNECTION_NETWORK_MAC, mac_address)},
@@ -94,7 +94,9 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
     def options(self) -> list[str]:
         """Return the list of available boot options."""
         server_data = self.manager.servers.get(self.mac_address)
-        opts = server_data.boot_options if server_data else []
+        opts = (
+            server_data.boot_options if server_data and server_data.boot_options else []
+        )
 
         # Ensure the default "(none)" is always a valid option
         if DEFAULT_BOOT_OPTION_NONE not in opts:
@@ -106,7 +108,11 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
     def current_option(self) -> str | None:
         """Return the currently pending boot option."""
         server_data = self.manager.servers.get(self.mac_address)
-        return server_data.next_boot_option if server_data else DEFAULT_BOOT_OPTION_NONE
+        return (
+            server_data.next_boot_option
+            if server_data and server_data.next_boot_option
+            else DEFAULT_BOOT_OPTION_NONE
+        )
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
