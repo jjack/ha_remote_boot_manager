@@ -144,6 +144,11 @@ class RemoteBootManagerSwitch(SwitchEntity):
         )
 
     @property
+    def assumed_state(self) -> bool:
+        """Flag this entity as unverified if we cannot ping it."""
+        return not bool(self.server.host)
+
+    @property
     def should_poll(self) -> bool:
         """Enable polling only if we have a host to ping."""
         return bool(self.server.host)
