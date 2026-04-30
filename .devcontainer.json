@@ -1,6 +1,6 @@
 {
     "name": "jjack/hass-remote-boot-manager",
-    "image": "mcr.microsoft.com/devcontainers/base:debian",
+    "image": "mcr.microsoft.com/devcontainers/python:3.13",
     "postCreateCommand": "scripts/setup.sh",
     "forwardPorts": [
         8123
@@ -18,8 +18,7 @@
                 "github.vscode-pull-request-github",
                 "ms-python.python",
                 "ms-python.vscode-pylance",
-                "ryanluker.vscode-coverage-gutters",
-                "sanjulaganepola.github-local-actions"
+                "ryanluker.vscode-coverage-gutters"
             ],
             "settings": {
                 "files.eol": "\n",
@@ -39,16 +38,8 @@
     },
     "remoteUser": "vscode",
     "features": {
-        "ghcr.io/devcontainers/features/python:1": {
-            "version": "3.13"
-        },
         "ghcr.io/devcontainers-extra/features/apt-packages:1": {
             "packages": "ffmpeg,libturbojpeg0,libpcap-dev"
-        },
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {
-            "version": "latest",
-            "moby": false
-        },
-        "ghcr.io/devcontainers-extra/features/act:1": {}
+        }
     }
 }

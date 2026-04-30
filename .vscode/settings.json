@@ -4,7 +4,6 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "githubLocalActions.actCommand": "/usr/local/bin/act",
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": false
 }
