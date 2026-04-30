@@ -14,7 +14,6 @@ from homeassistant.components.switch import (
     SwitchDeviceClass,
     SwitchEntity,
 )
-from homeassistant.core import callback
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from icmplib import async_ping
 
