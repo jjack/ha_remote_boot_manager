@@ -1,107 +1,121 @@
-"""Test manager for remote_boot_manager."""
+"""Tests for the RemoteBootManager."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import async_get as async_get_dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.remote_boot_manager.const import DEFAULT_BOOT_OPTION_NONE, DOMAIN
-from custom_components.remote_boot_manager.manager import RemoteBootManager
-
-
-async def test_manager_load_with_data(hass: HomeAssistant) -> None:
-    """Test loading manager with existing store data."""
-    manager = RemoteBootManager(hass)
-    with patch(
-        "homeassistant.helpers.storage.Store.async_load",
-        return_value={"servers": {"aa:bb:cc": {}}},
-    ):
-        await manager.async_load()
-        assert "aa:bb:cc" in manager.servers
-
-
-async def test_manager_remove_server(hass: HomeAssistant) -> None:
-    """Test removing a server."""
-    manager = RemoteBootManager(hass)
-    manager.servers["aa:bb:cc"] = {}
-    manager.async_remove_server("aa:bb")  # unknown
-    assert "aa:bb:cc" in manager.servers
-    manager.async_remove_server("aa:bb:cc")  # known
-    assert "aa:bb:cc" not in manager.servers
+from custom_components.remote_boot_manager.const import DEFAULT_BOOT_OPTION_NONE
+from custom_components.remote_boot_manager.manager import (
+    RemoteBootManager,
+    RemoteServer,
+)
 
 
 @pytest.fixture
-def mock_manager(hass: HomeAssistant) -> RemoteBootManager:
+def mock_store():
+    """Mock the HA Store implementation."""
+    with patch(
+        "custom_components.remote_boot_manager.manager.Store"
+    ) as mock_store_class:
+        mock_instance = AsyncMock()
+        mock_store_class.return_value = mock_instance
+        mock_instance.async_load.return_value = {}
+        yield mock_instance
+
+
+@pytest.fixture
+def manager(hass, mock_store):
+    """Fixture for providing a clean RemoteBootManager."""
     return RemoteBootManager(hass)
 
 
-async def test_manager_process_existing_server(
-    hass: HomeAssistant, mock_manager: RemoteBootManager
-) -> None:
-    """Test updating existing server info."""
-    entry = MockConfigEntry(domain=DOMAIN)
-    entry.add_to_hass(hass)
-    dev_reg = async_get_dr(hass)
-    device = dev_reg.async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers={(DOMAIN, "aa:bb:cc:dd:ee:ff")},
-        name="old-name",
-    )
-
-    mock_manager.servers["aa:bb:cc:dd:ee:ff"] = {
-        "hostname": "old-name",
-        "next_boot_option": "ubuntu",
-        "boot_options": ["(none)", "ubuntu", "windows"],
-        "bootloader": "grub",
-    }
-
-    # Call with new hostname
+async def test_async_process_webhook_payload_new_server(manager, hass):
+    """Test that a new server is added correctly from a payload."""
     payload = {
-        "hostname": "new-name",
-        "boot_options": ["windows"],  # ubuntu removed
+        "hostname": "test-server",
         "bootloader": "grub",
+        "boot_options": ["ubuntu", "windows"],
     }
 
-    mock_manager._notify_listeners = MagicMock()
-    mock_manager.async_process_webhook_payload("aa:bb:cc:dd:ee:ff", payload)
+    with patch(
+        "custom_components.remote_boot_manager.manager.async_dispatcher_send"
+    ) as mock_dispatch:
+        manager.async_process_webhook_payload("00:11:22:33:44:55", payload)
 
-    assert mock_manager.servers["aa:bb:cc:dd:ee:ff"]["hostname"] == "new-name"
-    # next_boot_option should have been reset to default because "ubuntu" is not in ["windows"]
-    assert (
-        mock_manager.servers["aa:bb:cc:dd:ee:ff"]["next_boot_option"]
-        == DEFAULT_BOOT_OPTION_NONE
+        assert "00:11:22:33:44:55" in manager.servers
+        server = manager.servers["00:11:22:33:44:55"]
+        assert isinstance(server, RemoteServer)
+        assert server.hostname == "test-server"
+        # make sure that (none) is prepended
+        assert server.boot_options == [DEFAULT_BOOT_OPTION_NONE, "ubuntu", "windows"]
+
+        mock_dispatch.assert_called_once()
+
+
+async def test_async_process_webhook_payload_update_existing_server(manager, hass):
+    """Test that an existing server is updated correctly, including device registry rename."""
+    # Setup existing server
+    manager.servers["00:11:22:33:44:55"] = RemoteServer(
+        mac="00:11:22:33:44:55",
+        hostname="old-hostname",
+        bootloader="grub",
+        boot_options=["ubuntu"],
     )
-    mock_manager._notify_listeners.assert_called_once()
 
-    # check device name updated
-    device = dev_reg.async_get_device(identifiers={(DOMAIN, "aa:bb:cc:dd:ee:ff")})
-    assert device is not None
-    assert device.name == "new-name"
-
-
-async def test_manager_consume_unknown_mac(
-    hass: HomeAssistant, mock_manager: RemoteBootManager
-) -> None:
-    """Test consuming from an unknown MAC returns default."""
-    assert (
-        mock_manager.async_consume_next_boot_option("unknown")
-        == DEFAULT_BOOT_OPTION_NONE
-    )
-
-
-async def test_manager_existing_server_no_device(
-    hass: HomeAssistant, mock_manager: RemoteBootManager
-) -> None:
-    """Test updating an existing server when the device is not found."""
-    mock_manager.servers["aa:bb:cc"] = {
-        "hostname": "old-name",
-        "next_boot_option": "foo",
-        "boot_options": ["foo"],
+    payload = {
+        "hostname": "new-hostname",
         "bootloader": "grub",
+        "boot_options": ["ubuntu", "arch"],
     }
-    payload = {"hostname": "new-name", "boot_options": ["foo"], "bootloader": "grub"}
-    # No device exists in DR
-    mock_manager.async_process_webhook_payload("aa:bb:cc", payload)
-    assert mock_manager.servers["aa:bb:cc"]["hostname"] == "new-name"
+
+    with patch("custom_components.remote_boot_manager.manager.dr.async_get") as mock_dr:
+        mock_registry = MagicMock()
+        mock_dr.return_value = mock_registry
+        mock_device = MagicMock()
+        mock_device.id = "device_123"
+        mock_registry.async_get_device.return_value = mock_device
+
+        manager.async_process_webhook_payload("00:11:22:33:44:55", payload)
+
+        server = manager.servers["00:11:22:33:44:55"]
+        assert server.hostname == "new-hostname"
+        assert server.boot_options == [DEFAULT_BOOT_OPTION_NONE, "ubuntu", "arch"]
+
+        # Verify device registry was updated with the new hostname
+        mock_registry.async_update_device.assert_called_once_with(
+            "device_123", name="new-hostname"
+        )
+
+
+async def test_async_set_and_consume_next_boot_option(manager, hass):
+    """Test setting and safely consuming the next boot option."""
+    manager.servers["00:11:22:33:44:55"] = RemoteServer(
+        mac="00:11:22:33:44:55",
+        hostname="test-server",
+        bootloader="grub",
+        boot_options=[DEFAULT_BOOT_OPTION_NONE, "ubuntu", "windows"],
+    )
+
+    # Set the option
+    manager.async_set_next_boot_option("00:11:22:33:44:55", "windows")
+    assert manager.servers["00:11:22:33:44:55"].next_boot_option == "windows"
+
+    # Consume the option (should return it, and reset state)
+    consumed = manager.async_consume_next_boot_option("00:11:22:33:44:55")
+    assert consumed == "windows"
+    assert (
+        manager.servers["00:11:22:33:44:55"].next_boot_option
+        == DEFAULT_BOOT_OPTION_NONE
+    )
+
+
+async def test_async_remove_server(manager, hass):
+    """Test removing a server from the manager."""
+    manager.servers["00:11:22:33:44:55"] = RemoteServer(
+        mac="00:11:22:33:44:55",
+        hostname="test-server",
+        bootloader="grub",
+    )
+
+    manager.async_remove_server("00:11:22:33:44:55")
+    assert "00:11:22:33:44:55" not in manager.servers

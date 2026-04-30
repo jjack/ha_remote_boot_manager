@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 
 from aiohttp import web
@@ -44,7 +45,7 @@ class BootloaderView(HomeAssistantView):
         if not manager:
             return web.json_response({"error": "Integration not ready"}, status=503)
 
-        server = manager.servers.get(mac_address, {})
+        server = manager.servers.get(mac_address)
 
         if not server:
             LOGGER.warning(
@@ -52,7 +53,7 @@ class BootloaderView(HomeAssistantView):
             )
             return web.json_response({"error": "Server not found"}, status=404)
 
-        bootloader_name = server.get("bootloader", "")
+        bootloader_name = server.bootloader
         bootloader = await async_get_bootloader(hass, bootloader_name)
         if not bootloader:
             LOGGER.error(
@@ -62,7 +63,7 @@ class BootloaderView(HomeAssistantView):
 
         # Call the appropriate bootloader instance to generate the response
         try:
-            server_copy = server.copy()
+            server_copy = dataclasses.asdict(server)
             server_copy["next_boot_option"] = manager.async_consume_next_boot_option(
                 mac_address
             )

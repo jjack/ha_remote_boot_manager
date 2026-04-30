@@ -6,6 +6,7 @@ from aiohttp import web
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.remote_boot_manager.manager import RemoteServer
 from custom_components.remote_boot_manager.views import BootloaderView
 
 
@@ -54,7 +55,13 @@ async def test_bootloader_view_unsupported_bootloader(hass: HomeAssistant) -> No
     mock_request.app = {"hass": hass}
 
     mock_manager = MagicMock()
-    mock_manager.servers = {"aa:bb:cc:dd:ee:ff": {"bootloader": "unsupported"}}
+    mock_manager.servers = {
+        "aa:bb:cc:dd:ee:ff": RemoteServer(
+            mac="aa:bb:cc:dd:ee:ff",
+            hostname="test",
+            bootloader="unsupported",
+        )
+    }
     mock_entry = MockConfigEntry(domain="remote_boot_manager")
     mock_entry.add_to_hass(hass)
     mock_entry.runtime_data = mock_manager
@@ -74,7 +81,13 @@ async def test_bootloader_view_exception(hass: HomeAssistant) -> None:
     mock_request.app = {"hass": hass}
 
     mock_manager = MagicMock()
-    mock_manager.servers = {"aa:bb:cc:dd:ee:ff": {"bootloader": "grub"}}
+    mock_manager.servers = {
+        "aa:bb:cc:dd:ee:ff": RemoteServer(
+            mac="aa:bb:cc:dd:ee:ff",
+            hostname="test",
+            bootloader="grub",
+        )
+    }
     mock_manager.async_consume_next_boot_option.side_effect = Exception("Boom")
     mock_entry = MockConfigEntry(domain="remote_boot_manager")
     mock_entry.add_to_hass(hass)
