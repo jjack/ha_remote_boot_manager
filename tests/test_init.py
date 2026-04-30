@@ -2,48 +2,12 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from aiohttp import web
-
 from custom_components.remote_boot_manager import (
     async_reload_entry,
     async_remove_config_entry_device,
     async_remove_entry,
-    handle_boot_options_ingest_webhook,
 )
 from custom_components.remote_boot_manager.const import DOMAIN
-
-
-async def test_handle_boot_options_ingest_webhook_routes_to_first_manager(hass):
-    """Test that the webhook handler routes the payload to the first active manager."""
-    mock_request = MagicMock(spec=web.Request)
-
-    # Mock the payload validation to return a valid payload
-    mock_payload = {
-        "mac": "00:11:22:33:44:55",
-        "name": "test",
-        "bootloader": "grub",
-        "boot_options": ["windows"],
-    }
-
-    mock_entry = MagicMock()
-    mock_entry.entry_id = "test_entry"
-    mock_manager = MagicMock()
-    mock_entry.runtime_data = mock_manager
-
-    hass.config_entries.async_entries = MagicMock(return_value=[mock_entry])
-
-    with patch(
-        "custom_components.remote_boot_manager.webhook.async_validate_webhook_payload",
-        return_value=(mock_payload, None),
-    ):
-        response = await handle_boot_options_ingest_webhook(
-            hass, "test_webhook_id", mock_request
-        )
-
-        assert response.status == 200
-        mock_manager.async_process_webhook_payload.assert_called_once_with(
-            "00:11:22:33:44:55", mock_payload
-        )
 
 
 async def test_async_remove_entry_with_runtime_data(hass):
