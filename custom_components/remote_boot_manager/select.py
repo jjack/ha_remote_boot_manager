@@ -11,7 +11,6 @@ from homeassistant.helpers.device_registry import (
     DeviceInfo,
 )
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import DEFAULT_BOOT_OPTION_NONE, DOMAIN, LOGGER, SIGNAL_NEW_SERVER
 
@@ -55,7 +54,7 @@ async def async_setup_entry(
     )
 
 
-class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
+class RemoteBootManagerSelect(SelectEntity):
     """remote_boot_manager select class."""
 
     def __init__(self, manager: RemoteBootManager, mac_address: str) -> None:
@@ -121,16 +120,6 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
     async def async_added_to_hass(self) -> None:
         """Run when the entity is added to Home Assistant."""
         await super().async_added_to_hass()
-
-        # restore the previous state if HASS restarted
-        last_state = await self.async_get_last_state()
-        if last_state and last_state.state in self.options:
-            LOGGER.debug(
-                "Restoring previous boot option state for %s: %s",
-                self.mac_address,
-                last_state.state,
-            )
-            self.manager.async_set_next_boot_option(self.mac_address, last_state.state)
 
         # Subscribe to manager updates so the UI redraws when webhooks arrive
         self.async_on_remove(
