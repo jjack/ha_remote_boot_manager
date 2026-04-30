@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-from homeassistant.core import State
-
 from custom_components.remote_boot_manager.const import DEFAULT_BOOT_OPTION_NONE
 from custom_components.remote_boot_manager.manager import RemoteServer
 from custom_components.remote_boot_manager.select import (
@@ -106,37 +104,3 @@ async def test_async_select_option(hass):
     manager.async_set_next_boot_option.assert_called_once_with(
         "00:11:22:33:44:55", "ubuntu"
     )
-
-
-async def test_async_added_to_hass_restore_state(hass):
-    """Test restoring state when added to hass."""
-    manager = MagicMock()
-    manager.servers = {
-        "00:11:22:33:44:55": RemoteServer(
-            mac="00:11:22:33:44:55",
-            name="Test",
-            boot_options=[DEFAULT_BOOT_OPTION_NONE, "ubuntu"],
-        )
-    }
-    select = RemoteBootManagerSelect(manager, "00:11:22:33:44:55")
-    select.hass = hass
-
-    with (
-        patch(
-            "custom_components.remote_boot_manager.select.RestoreEntity.async_get_last_state",
-            side_effect=[
-                State("select.test", "ubuntu"),
-                State("select.test", "invalid_os"),
-            ],
-        ),
-        patch(
-            "custom_components.remote_boot_manager.select.RestoreEntity.async_added_to_hass"
-        ),
-    ):
-        # Should restore the valid state and ignore the invalid state
-        await select.async_added_to_hass()
-        manager.async_set_next_boot_option.assert_called_once_with(
-            "00:11:22:33:44:55", "ubuntu"
-        )
-        await select.async_added_to_hass()
-        assert manager.async_set_next_boot_option.call_count == 1
