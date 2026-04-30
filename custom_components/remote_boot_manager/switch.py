@@ -53,10 +53,10 @@ async def _async_ping_host(host: str) -> bool:
 # this provides backwards compatibility with the Wake On Lan integration's
 # YAML config, but is not intended for anything else.
 async def async_setup_platform(
-    hass: HomeAssistant,
+    hass: HomeAssistant,  # noqa: ARG001
     config: ConfigType,
     async_add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None,
+    discovery_info: DiscoveryInfoType | None = None,  # noqa: ARG001
 ) -> None:
     """Set up a remote_boot_manager switch from YAML."""
     if "bootloader" in config or "boot_options" in config:

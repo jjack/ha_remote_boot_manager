@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 import wakeonlan
-from homeassistant import config_entries
 from homeassistant.components import webhook as ha_webhook
 from homeassistant.const import (
     CONF_BROADCAST_ADDRESS,
@@ -53,7 +52,7 @@ PLATFORMS: list[Platform] = [
 
 
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
-async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:  # noqa: ARG001
     """Set up the remote_boot_manager component."""
     # Register the unauthenticated bootloader view API
     hass.http.register_view(BootloaderView())
