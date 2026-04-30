@@ -15,6 +15,7 @@ from homeassistant.components.switch import (
     SwitchEntity,
 )
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
+from homeassistant.helpers.script import Script
 from icmplib import async_ping
 
 from .const import DOMAIN, LOGGER
@@ -35,6 +36,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("broadcast_port"): cv.port,
         vol.Optional("bootloader"): cv.string,
         vol.Optional("boot_options"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional("turn_off"): cv.SCRIPT_SCHEMA,
     }
 )
 
@@ -53,7 +55,7 @@ async def _async_ping_host(host: str) -> bool:
 # this provides backwards compatibility with the Wake On Lan integration's
 # YAML config, but is not intended for anything else.
 async def async_setup_platform(
-    hass: HomeAssistant,  # noqa: ARG001
+    hass: HomeAssistant,
     config: ConfigType,
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType | None = None,  # noqa: ARG001
@@ -73,9 +75,10 @@ async def async_setup_platform(
         host=config.get("host"),
         broadcast_address=config.get("broadcast_address"),
         broadcast_port=config.get("broadcast_port"),
+        off_action=config.get("turn_off"),
     )
 
-    async_add_entities([RemoteBootManagerSwitch(config["mac"], server)])
+    async_add_entities([RemoteBootManagerSwitch(hass, server)])
 
 
 class RemoteBootManagerSwitch(SwitchEntity):
@@ -83,20 +86,24 @@ class RemoteBootManagerSwitch(SwitchEntity):
 
     def __init__(
         self,
-        mac_address: str,
+        hass: HomeAssistant,
         server: RemoteServer,
     ) -> None:
         """Initialize the switch class."""
-        self.mac_address = mac_address
         self.server = server
 
-        self._attr_unique_id = f"{mac_address}_wake_switch"
-        self._attr_name = None
+        self._attr_unique_id = f"{self.server.mac}_wake_switch"
+        self._attr_name = self.server.name
         self._attr_has_entity_name = True
         self._attr_device_class = SwitchDeviceClass.SWITCH
         self._attr_is_on = False
 
         self._ping_task: asyncio.Task | None = None
+        self._turn_off_script = (
+            Script(hass, self.server.off_action, self.server.name, DOMAIN)
+            if self.server.off_action
+            else None
+        )
 
         broadcast_info = []
         if b_addr := self.server.broadcast_address:
@@ -104,18 +111,14 @@ class RemoteBootManagerSwitch(SwitchEntity):
         if b_port := self.server.broadcast_port:
             broadcast_info.append(f"Port: {b_port}")
 
-        model_name = (
-            f"Wake-on-LAN ({', '.join(broadcast_info)})"
-            if broadcast_info
-            else "Wake-on-LAN"
-        )
+        model_name = f"WOL ({', '.join(broadcast_info)})" if broadcast_info else "WOL"
 
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, mac_address)},
+            identifiers={(DOMAIN, self.server.mac)},
             name=self.server.name,
             manufacturer="Remote Boot Manager",
             model=model_name,
-            connections={(CONNECTION_NETWORK_MAC, mac_address)},
+            connections={(CONNECTION_NETWORK_MAC, self.server.mac)},
         )
 
     @property
@@ -131,33 +134,51 @@ class RemoteBootManagerSwitch(SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:  # noqa: ARG002
         """Turn the entity on."""
+        self._attr_is_on = True
+        self.async_write_ha_state()
+
         wol_kwargs = {}
-        if broadcast_address := self.server.broadcast_address:
-            wol_kwargs["ip_address"] = broadcast_address
-        if broadcast_port := self.server.broadcast_port:
-            wol_kwargs["port"] = broadcast_port
+        if self.server.broadcast_address is not None:
+            wol_kwargs["ip_address"] = self.server.broadcast_address
+        if self.server.broadcast_port is not None:
+            wol_kwargs["port"] = self.server.broadcast_port
 
         await self.hass.async_add_executor_job(
-            partial(wakeonlan.send_magic_packet, self.mac_address, **wol_kwargs)
+            partial(wakeonlan.send_magic_packet, self.server.mac, **wol_kwargs)
         )
 
         if self.server.host:
             if self._ping_task and not self._ping_task.done():
                 self._ping_task.cancel()
             self._ping_task = self.hass.async_create_background_task(
-                self._async_ping_loop(self.server.host), "wol_ping"
+                self._async_ping_loop(self.server.host, target_state=True),
+                "wol_ping_on",
             )
 
-    async def async_turn_off(self, **kwargs: Any) -> None:
-        """Turn the entity off (Wake-on-LAN doesn't natively support off)."""
+    async def async_turn_off(self, **kwargs: Any) -> None:  # noqa: ARG002
+        """Turn the entity off if a turn_off script was defined."""
+        self._attr_is_on = False
+        self.async_write_ha_state()
 
-    async def _async_ping_loop(self, host: str) -> None:
-        """Ping host rapidly for 3 minutes after turn-on."""
+        if self._turn_off_script:
+            await self._turn_off_script.async_run(context=self._context)
+
+        if self.server.host:
+            if self._ping_task and not self._ping_task.done():
+                self._ping_task.cancel()
+            self._ping_task = self.hass.async_create_background_task(
+                self._async_ping_loop(self.server.host, target_state=False),
+                "wol_ping_off",
+            )
+
+    async def _async_ping_loop(self, host: str, *, target_state: bool) -> None:
+        """Ping host rapidly for 3 minutes after turn-on/off."""
         await asyncio.sleep(10)
         for _ in range(36):  # 36 iterations * 5 seconds = 180 seconds (3 mins)
             is_awake = await _async_ping_host(host)
-            if is_awake:
-                self._attr_is_on = True
-                self.async_write_ha_state()
-                break
+            if is_awake == target_state:
+                return
             await asyncio.sleep(5)
+
+        self._attr_is_on = not target_state
+        self.async_write_ha_state()

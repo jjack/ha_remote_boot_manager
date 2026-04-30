@@ -40,6 +40,9 @@ class RemoteServer:
     # this comes from the UI, not the webhook
     next_boot_option: str = DEFAULT_BOOT_OPTION_NONE
 
+    # this comes from the YAML config for wake_on_lan backwards compatibility
+    off_action: list[Any] | None = None
+
     def update_from_payload(self, payload: dict[str, Any]) -> None:
         """Safely update the server state from incoming webhook data."""
         self.name = payload.get("name", self.name)
