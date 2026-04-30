@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.const import CONF_BROADCAST_ADDRESS, CONF_BROADCAST_PORT
 from homeassistant.core import callback
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.storage import Store
 
@@ -20,8 +21,6 @@ from .const import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from homeassistant.core import HomeAssistant
 
 
@@ -62,8 +61,6 @@ class RemoteBootManager:
         """Central state manager for remote boot options."""
         self.hass = hass
 
-        self._listeners: list[Callable] = []
-
         self.servers: dict[str, RemoteServer] = {}
         self._store = Store(hass, 1, f"{DOMAIN}.servers")
 
@@ -81,6 +78,7 @@ class RemoteBootManager:
     @callback
     def async_remove_server(self, mac_address: str) -> None:
         """Remove a server from the manager and save state."""
+        mac_address = format_mac(mac_address)
         if mac_address in self.servers:
             self.servers.pop(mac_address)
             self._save()
@@ -96,26 +94,12 @@ class RemoteBootManager:
         return {"servers": self.servers}
 
     @callback
-    def async_add_listener(self, update_callback: Callable) -> Callable:
-        """Register listeners (used by select and button entities)."""
-        self._listeners.append(update_callback)
-
-        @callback
-        def remove_listener() -> None:
-            self._listeners.remove(update_callback)
-
-        return remove_listener
-
-    def _notify_listeners(self) -> None:
-        """Tell all registered entities to update their states."""
-        for update_callback in self._listeners:
-            update_callback()
-
-    @callback
     def async_process_webhook_payload(
         self, mac_address: str, payload: dict[str, Any]
     ) -> None:
         """Process payloads from the bare-metal GO agents."""
+        mac_address = format_mac(mac_address)
+
         is_new_server = mac_address not in self.servers
         if is_new_server:
             self.servers[mac_address] = RemoteServer(
@@ -184,7 +168,7 @@ class RemoteBootManager:
         if is_new_server:
             async_dispatcher_send(self.hass, SIGNAL_NEW_SERVER, mac_address)
         else:
-            self._notify_listeners()
+            async_dispatcher_send(self.hass, f"{DOMAIN}_update_{mac_address}")
 
         self._save()
 
@@ -193,10 +177,11 @@ class RemoteBootManager:
         self, mac_address: str, next_boot_option: str
     ) -> None:
         """Notify listeners that the selected boot option has changed."""
+        mac_address = format_mac(mac_address)
         if mac_address in self.servers:
             self.servers[mac_address].next_boot_option = next_boot_option
             self._save()
-            self._notify_listeners()
+            async_dispatcher_send(self.hass, f"{DOMAIN}_update_{mac_address}")
             LOGGER.debug(
                 "Set selected boot option for %s to %s",
                 mac_address,
@@ -206,6 +191,7 @@ class RemoteBootManager:
     @callback
     def async_consume_next_boot_option(self, mac_address: str) -> str:
         """Retrieve the requested boot option and immediately resets the state."""
+        mac_address = format_mac(mac_address)
         if mac_address not in self.servers:
             LOGGER.warning(
                 "GRUB requested boot option for unknown MAC address: %s", mac_address
@@ -219,6 +205,6 @@ class RemoteBootManager:
         self._save()
 
         # Notify UI to revert the dropdown back to "(none)"
-        self._notify_listeners()
+        async_dispatcher_send(self.hass, f"{DOMAIN}_update_{mac_address}")
 
         return next_boot_option

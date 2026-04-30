@@ -213,29 +213,18 @@ async def test_async_process_webhook_payload_resets_invalid_next_boot(manager, h
 
 async def test_async_set_next_boot_option_invalid_mac(manager, hass):
     """Test setting a boot option for a non-existent MAC does nothing."""
-    with patch.object(manager, "_notify_listeners") as mock_notify:
+    with patch(
+        "custom_components.remote_boot_manager.manager.async_dispatcher_send"
+    ) as mock_dispatch:
         manager.async_set_next_boot_option("FF:FF:FF:FF:FF:FF", "windows")
         assert "FF:FF:FF:FF:FF:FF" not in manager.servers
-        mock_notify.assert_not_called()
+        mock_dispatch.assert_not_called()
 
 
 async def test_async_consume_next_boot_option_invalid_mac(manager, hass):
     """Test consuming a boot option for a non-existent MAC returns default."""
     consumed = manager.async_consume_next_boot_option("FF:FF:FF:FF:FF:FF")
     assert consumed == DEFAULT_BOOT_OPTION_NONE
-
-
-async def test_listeners(manager, hass):
-    """Test that listeners can be added, notified, and removed."""
-    mock_callback = MagicMock()
-
-    remove_listener = manager.async_add_listener(mock_callback)
-    manager._notify_listeners()
-    mock_callback.assert_called_once()
-
-    remove_listener()
-    manager._notify_listeners()
-    mock_callback.assert_called_once()
 
 
 async def test_async_remove_server(manager, hass):

@@ -133,4 +133,10 @@ class RemoteBootManagerSelect(SelectEntity, RestoreEntity):
             self.manager.async_set_next_boot_option(self.mac_address, last_state.state)
 
         # Subscribe to manager updates so the UI redraws when webhooks arrive
-        self.async_on_remove(self.manager.async_add_listener(self.async_write_ha_state))
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass,
+                f"{DOMAIN}_update_{self.mac_address}",
+                self.async_write_ha_state,
+            )
+        )
