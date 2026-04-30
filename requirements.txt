@@ -7,3 +7,13 @@ wakeonlan==3.1.0
 pytest
 pytest-asyncio
 pytest-homeassistant-custom-component
+
+# misc dependencies for home assistant
+ha-ffmpeg
+aiodhcpwatcher
+aiousbwatcher
+async-upnp-client
+hassil
+PyTurboJPEG
+av
+home-assistant-frontend
