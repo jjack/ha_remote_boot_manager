@@ -32,6 +32,7 @@ WEBHOOK_SCHEMA = vol.Schema(
         vol.Optional(CONF_HOST): cv.string,
         vol.Optional(CONF_BROADCAST_ADDRESS): cv.string,
         vol.Optional(CONF_BROADCAST_PORT): cv.port,
+        vol.Optional("entity_type", default="button"): vol.In(["button", "switch"]),
     }
 )
 

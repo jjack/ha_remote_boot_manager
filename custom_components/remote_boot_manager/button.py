@@ -45,7 +45,8 @@ async def async_setup_entry(
     @callback
     def async_add_server_button(mac_address: str) -> None:
         """Add a button entity for a newly discovered server."""
-        async_add_entities([RemoteBootManagerButton(manager, mac_address)])
+        if manager.servers[mac_address].entity_type == "button":
+            async_add_entities([RemoteBootManagerButton(manager, mac_address)])
 
     # Add entities for servers that already exist in the manager
     for mac in manager.servers:

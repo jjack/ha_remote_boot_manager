@@ -35,6 +35,7 @@ class RemoteServer:
     boot_options: list[str] = field(default_factory=list)
     broadcast_address: str | None = None
     broadcast_port: int | None = None
+    entity_type: str = "button"
 
     # this comes from the UI, not the webhook
     next_boot_option: str = DEFAULT_BOOT_OPTION_NONE
@@ -52,6 +53,7 @@ class RemoteServer:
             CONF_BROADCAST_ADDRESS, self.broadcast_address
         )
         self.broadcast_port = payload.get(CONF_BROADCAST_PORT, self.broadcast_port)
+        self.entity_type = payload.get("entity_type", self.entity_type)
 
 
 class RemoteBootManager:
@@ -110,6 +112,7 @@ class RemoteBootManager:
                 host=payload.get("host"),
                 broadcast_address=payload.get(CONF_BROADCAST_ADDRESS),
                 broadcast_port=payload.get(CONF_BROADCAST_PORT),
+                entity_type=payload.get("entity_type", "button"),
             )
 
             LOGGER.info(

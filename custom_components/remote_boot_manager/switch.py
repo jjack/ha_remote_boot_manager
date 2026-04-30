@@ -21,7 +21,9 @@ from homeassistant.const import (
     CONF_MAC,
     CONF_NAME,
 )
+from homeassistant.core import callback
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.script import Script
 from icmplib import async_ping
 
@@ -31,6 +33,7 @@ from .const import (
     CONF_TURN_OFF,
     DEFAULT_NAME,
     DOMAIN,
+    SIGNAL_NEW_SERVER,
 )
 from .manager import RemoteServer
 
@@ -38,6 +41,8 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
     from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+
+    from .data import RemoteBootManagerConfigEntry
 
 
 def _validate_legacy_only(config: dict[str, Any]) -> dict[str, Any]:
@@ -209,3 +214,28 @@ class RemoteBootManagerSwitch(SwitchEntity):
 
         self._attr_is_on = not target_state
         self.async_write_ha_state()
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: RemoteBootManagerConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the switch platform from a config entry."""
+    manager = entry.runtime_data
+
+    @callback
+    def async_add_server_switch(mac_address: str) -> None:
+        """Add a switch entity for a newly discovered server."""
+        server = manager.servers[mac_address]
+        if server.entity_type == "switch":
+            async_add_entities([RemoteBootManagerSwitch(hass, server)])
+
+    # Add entities for servers that already exist in the manager
+    for mac in manager.servers:
+        async_add_server_switch(mac)
+
+    # Listen for the signal to add new servers discovered via webhook
+    entry.async_on_unload(
+        async_dispatcher_connect(hass, SIGNAL_NEW_SERVER, async_add_server_switch)
+    )

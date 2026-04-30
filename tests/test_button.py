@@ -13,7 +13,10 @@ async def test_async_setup_entry(hass):
     """Test the setup entry logic, including the dispatcher connection."""
     mock_entry = MagicMock()
     mock_manager = MagicMock()
-    mock_manager.servers = {"00:11:22:33:44:55": MagicMock()}
+    mock_manager.servers = {
+        "00:11:22:33:44:55": MagicMock(entity_type="button"),
+        "AA:BB:CC:DD:EE:FF": MagicMock(entity_type="switch"),
+    }
     mock_entry.runtime_data = mock_manager
     async_add_entities = MagicMock()
 
@@ -28,8 +31,13 @@ async def test_async_setup_entry(hass):
 
         # Verify the dispatcher callback adds the new entity
         callback = mock_connect.call_args[0][2]
-        mock_manager.servers["AA:BB:CC:DD:EE:FF"] = MagicMock()
-        callback("AA:BB:CC:DD:EE:FF")
+        mock_manager.servers["11:22:33:44:55:66"] = MagicMock(entity_type="button")
+        callback("11:22:33:44:55:66")
+        assert async_add_entities.call_count == 2
+
+        # Verify it does not add a switch entity
+        mock_manager.servers["22:33:44:55:66:77"] = MagicMock(entity_type="switch")
+        callback("22:33:44:55:66:77")
         assert async_add_entities.call_count == 2
 
 
