@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.4.0](https://github.com/jjack/hass-remote-boot-manager/compare/v0.3.1...v0.4.0) (2026-05-04)
+
+
+### Features
+
+* adding backwards compatability to the switch ([febab72](https://github.com/jjack/hass-remote-boot-manager/commit/febab725e84fa71de6e1e14ad3a181798c886cd6))
+* adding backwards compatability to the switch ([0bfbab5](https://github.com/jjack/hass-remote-boot-manager/commit/0bfbab5b5a3b12d5e424c577a15ae9444539c2e3))
+* letting people use buttons or switches, depending on their need and preferences ([ac4152c](https://github.com/jjack/hass-remote-boot-manager/commit/ac4152c71a68d9ecfbc0939675d4a384c5e7fc7b))
+* reading configuration.yaml entries to support wake_on_lan migration ([eae0704](https://github.com/jjack/hass-remote-boot-manager/commit/eae070499bed5d9b8b46da51094ad0991f397e73))
+* replicating turn_off functionality ([93c2b22](https://github.com/jjack/hass-remote-boot-manager/commit/93c2b22c225b75ffecec731611652060f51f0774))
+* requiring a token (the webhook id) to actually consume the next boot option so that you can test things ([4c94143](https://github.com/jjack/hass-remote-boot-manager/commit/4c9414335c53795a45273a150515aa7db9ec6311))
+
+
+### Bug Fixes
+
+* adding missing services.yaml to repo ([730bf4a](https://github.com/jjack/hass-remote-boot-manager/commit/730bf4aa1835cf7bd498e7d30975608de4226610))
+* better handling of switch polling.. ([ce3bf4b](https://github.com/jjack/hass-remote-boot-manager/commit/ce3bf4bb3a251da0443658be596fb83e5d8cfbec))
+* no longer immediately toggling switches off ([d1e3118](https://github.com/jjack/hass-remote-boot-manager/commit/d1e3118005cd08e528a7667ae3957177bc09790d))
+* no longer using the global manager ([01863c3](https://github.com/jjack/hass-remote-boot-manager/commit/01863c358e9782a2608ed7e20276563d9da07de6))
+* removing direct yaml config setup. that was not at all what I was trying to do ([a989cb5](https://github.com/jjack/hass-remote-boot-manager/commit/a989cb564dfc9d9cd4d70e073ea79ca7aa9bd380))
+* removing RestoreEntity and using Store for everything ([1212ecd](https://github.com/jjack/hass-remote-boot-manager/commit/1212ecd934773e5fd9680afe6a4b502680d3219b))
+
 ## [0.4.0-beta.0](https://github.com/jjack/hass-remote-boot-manager/compare/v0.3.1-beta.0...v0.4.0-beta.0) (2026-04-29)
 
 
