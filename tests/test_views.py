@@ -1,5 +1,6 @@
 """Test views for remote_boot_manager."""
 
+import json
 from unittest.mock import MagicMock, patch
 
 from aiohttp import web
@@ -199,3 +200,34 @@ async def test_bootloader_view_success_consume(hass: HomeAssistant) -> None:
 
         called_server = mock_bootloader.generate_boot_config.call_args[0][0]
         assert called_server["next_boot_option"] == "windows"
+
+
+async def test_bootloader_view_integration_not_configured(hass: HomeAssistant) -> None:
+    """Test that BootloaderView handles missing config entries gracefully."""
+    view = BootloaderView()
+    mock_request = MagicMock(spec=web.Request)
+    mock_request.app = {"hass": hass}
+
+    with patch.object(hass.config_entries, "async_entries", return_value=[]):
+        response = await view.get(mock_request, "00:11:22:33:44:55")
+
+        assert response.status == 500
+        body = json.loads(response.text)
+        assert body["error"] == "Integration not configured"
+
+
+async def test_bootloader_view_integration_not_ready(hass: HomeAssistant) -> None:
+    """Test that BootloaderView handles an integration that isn't ready."""
+    view = BootloaderView()
+    mock_request = MagicMock(spec=web.Request)
+    mock_request.app = {"hass": hass}
+
+    mock_entry = MagicMock()
+    mock_entry.runtime_data = None
+
+    with patch.object(hass.config_entries, "async_entries", return_value=[mock_entry]):
+        response = await view.get(mock_request, "00:11:22:33:44:55")
+
+        assert response.status == 500
+        body = json.loads(response.text)
+        assert body["error"] == "Integration not ready"
