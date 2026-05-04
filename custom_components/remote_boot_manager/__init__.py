@@ -23,7 +23,7 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.storage import Store
 
-from .const import DOMAIN, WEBHOOK_NAME
+from .const import DOMAIN, LOGGER, WEBHOOK_NAME
 from .manager import RemoteBootManager
 from .views import BootloaderView
 from .webhook import async_validate_webhook_payload
@@ -89,8 +89,8 @@ async def async_setup_entry(
     await manager.async_load()
     entry.runtime_data = manager
 
-    # Register the unauthenticated bootloader view API with direct manager access
-    hass.http.register_view(BootloaderView(manager))
+    # Register the unauthenticated bootloader view API
+    hass.http.register_view(BootloaderView())
 
     # Create a bound webhook handler closure
     async def handle_webhook(
@@ -100,6 +100,7 @@ async def async_setup_entry(
     ) -> web.Response:
         """Handle incoming boot options push requests bound to this manager."""
         try:
+            LOGGER.debug("got webhook request: %s", request)
             payload, error_response = await async_validate_webhook_payload(request)
             if error_response:
                 return error_response

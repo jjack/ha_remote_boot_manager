@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -70,7 +71,18 @@ class RemoteBootManager:
         """Load data from storage."""
         data = await self._store.async_load()
         if data and "servers" in data:
-            self.servers = data["servers"]
+            self.servers = {}
+            for mac, server_data in data["servers"].items():
+                if isinstance(server_data, dict):
+                    valid_keys = {f.name for f in dataclasses.fields(RemoteServer)}
+                    filtered_data = {
+                        k: v for k, v in server_data.items() if k in valid_keys
+                    }
+                    self.servers[mac] = RemoteServer(**filtered_data)
+                else:
+                    LOGGER.warning(
+                        "Discarding invalid server data for %s: %s", mac, server_data
+                    )
 
     async def async_purge_data(self) -> None:
         """Purge data from storage."""
@@ -93,7 +105,11 @@ class RemoteBootManager:
     @callback
     def _data_to_save(self) -> dict[str, Any]:
         """Return data for storage."""
-        return {"servers": self.servers}
+        return {
+            "servers": {
+                mac: dataclasses.asdict(server) for mac, server in self.servers.items()
+            }
+        }
 
     @callback
     def async_process_webhook_payload(
