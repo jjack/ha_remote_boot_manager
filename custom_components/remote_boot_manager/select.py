@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from homeassistant.components.select import SelectEntity, SelectEntityDescription
+from homeassistant.components.select import SelectEntity
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import (
     CONNECTION_NETWORK_MAC,
@@ -20,14 +20,6 @@ if TYPE_CHECKING:
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
     from .manager import RemoteBootManager
-
-ENTITY_DESCRIPTIONS = (
-    SelectEntityDescription(
-        key="remote_boot_manager_select",
-        name="Remote Boot Manager Select",
-        icon="mdi:harddisk",
-    ),
-)
 
 
 async def async_setup_entry(

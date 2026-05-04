@@ -6,11 +6,7 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 import wakeonlan
-from homeassistant.components.button import (
-    ButtonDeviceClass,
-    ButtonEntity,
-    ButtonEntityDescription,
-)
+from homeassistant.components.button import ButtonEntity
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -23,15 +19,6 @@ if TYPE_CHECKING:
 
     from .data import RemoteBootManagerConfigEntry
     from .manager import RemoteBootManager
-
-ENTITY_DESCRIPTIONS = (
-    ButtonEntityDescription(
-        key="remote_boot_manager_button",
-        name="Integration Button",
-        icon="mdi:gesture-tap-button",
-        device_class=ButtonDeviceClass.RESTART,
-    ),
-)
 
 
 async def async_setup_entry(
