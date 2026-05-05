@@ -1,6 +1,7 @@
 """Test views for remote_boot_manager."""
 
 import json
+from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 from aiohttp import web
@@ -19,7 +20,7 @@ async def test_bootloader_view_invalid_mac(hass: HomeAssistant) -> None:
         "custom_components.remote_boot_manager.views.format_mac", return_value=None
     ):
         resp = await view.get(mock_request, "invalid")
-        assert resp.status == 400
+        assert resp.status == HTTPStatus.BAD_REQUEST
 
 
 async def test_bootloader_view_server_not_found(hass: HomeAssistant) -> None:
@@ -37,7 +38,7 @@ async def test_bootloader_view_server_not_found(hass: HomeAssistant) -> None:
     view = BootloaderView()
 
     resp = await view.get(mock_request, "aa:bb:cc:dd:ee:ff")
-    assert resp.status == 404
+    assert resp.status == HTTPStatus.NOT_FOUND
 
 
 async def test_bootloader_view_no_bootloader(hass: HomeAssistant) -> None:
@@ -61,7 +62,7 @@ async def test_bootloader_view_no_bootloader(hass: HomeAssistant) -> None:
     view = BootloaderView()
 
     resp = await view.get(mock_request, "aa:bb:cc:dd:ee:ff")
-    assert resp.status == 400
+    assert resp.status == HTTPStatus.BAD_REQUEST
 
 
 async def test_bootloader_view_unsupported_bootloader(hass: HomeAssistant) -> None:
@@ -89,7 +90,7 @@ async def test_bootloader_view_unsupported_bootloader(hass: HomeAssistant) -> No
         return_value=None,
     ):
         resp = await view.get(mock_request, "aa:bb:cc:dd:ee:ff")
-        assert resp.status == 400
+        assert resp.status == HTTPStatus.BAD_REQUEST
 
 
 async def test_bootloader_view_exception(hass: HomeAssistant) -> None:
@@ -120,7 +121,7 @@ async def test_bootloader_view_exception(hass: HomeAssistant) -> None:
         return_value=mock_bootloader,
     ):
         resp = await view.get(mock_request, "aa:bb:cc:dd:ee:ff")
-        assert resp.status == 500
+        assert resp.status == HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 async def test_bootloader_view_success_read_only(hass: HomeAssistant) -> None:
@@ -153,7 +154,7 @@ async def test_bootloader_view_success_read_only(hass: HomeAssistant) -> None:
         return_value=mock_bootloader,
     ):
         resp = await view.get(mock_request, "aa:bb:cc:dd:ee:ff")
-        assert resp.status == 200
+        assert resp.status == HTTPStatus.OK
         mock_manager.async_consume_next_boot_option.assert_not_called()
 
         # Verify the unconsumed next_boot_option is passed to the generator
@@ -193,7 +194,7 @@ async def test_bootloader_view_success_consume(hass: HomeAssistant) -> None:
         return_value=mock_bootloader,
     ):
         resp = await view.get(mock_request, "aa:bb:cc:dd:ee:ff")
-        assert resp.status == 200
+        assert resp.status == HTTPStatus.OK
         mock_manager.async_consume_next_boot_option.assert_called_once_with(
             "aa:bb:cc:dd:ee:ff"
         )
@@ -211,7 +212,7 @@ async def test_bootloader_view_integration_not_configured(hass: HomeAssistant) -
     with patch.object(hass.config_entries, "async_entries", return_value=[]):
         response = await view.get(mock_request, "00:11:22:33:44:55")
 
-        assert response.status == 500
+        assert response.status == HTTPStatus.INTERNAL_SERVER_ERROR
         body = json.loads(response.text)
         assert body["error"] == "Integration not configured"
 
@@ -228,7 +229,7 @@ async def test_bootloader_view_integration_not_ready(hass: HomeAssistant) -> Non
     with patch.object(hass.config_entries, "async_entries", return_value=[mock_entry]):
         response = await view.get(mock_request, "00:11:22:33:44:55")
 
-        assert response.status == 500
+        assert response.status == HTTPStatus.INTERNAL_SERVER_ERROR
         body = json.loads(response.text)
         assert body["error"] == "Integration not ready"
 
@@ -247,6 +248,6 @@ async def test_bootloader_view_missing_documentation(hass: HomeAssistant) -> Non
     with patch.object(hass.config_entries, "async_entries", return_value=[mock_entry]):
         response = await view.get(mock_request, "00:11:22:33:44:55")
 
-        assert response.status == 500
+        assert response.status == HTTPStatus.INTERNAL_SERVER_ERROR
         body = json.loads(response.text)
         assert body["error"] == "Integration missing documentation"

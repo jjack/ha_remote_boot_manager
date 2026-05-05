@@ -1,5 +1,6 @@
 """Test integration for remote_boot_manager."""
 
+from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
@@ -51,7 +52,7 @@ async def discovered_client(hass: HomeAssistant, setup_integration):
         "boot_options": ["ubuntu", "windows"],
     }
     resp = await client.post(webhook_url, json=payload)
-    assert resp.status == 200
+    assert resp.status == HTTPStatus.OK
     await hass.async_block_till_done()
     return client
 
@@ -68,7 +69,7 @@ async def test_webhook_discovery(hass: HomeAssistant, setup_integration) -> None
     }
 
     resp = await client.post(webhook_url, json=payload)
-    assert resp.status == 200
+    assert resp.status == HTTPStatus.OK
     await hass.async_block_till_done()
 
     entity_id_select = "select.test_server_next_boot_option"
@@ -91,7 +92,7 @@ async def test_minimal_webhook_discovery_and_switch(
     payload = {"mac": "de:ad:be:ef:00:01", "name": "minimal-server"}
 
     resp = await client.post(webhook_url, json=payload)
-    assert resp.status == 200
+    assert resp.status == HTTPStatus.OK
     await hass.async_block_till_done()
 
     # Verify entities are created
@@ -133,7 +134,7 @@ async def test_select_and_bootloader_view(
     assert state.state == "ubuntu"
 
     resp = await client.get("/api/remote_boot_manager/aa:bb:cc:dd:ee:ff")
-    assert resp.status == 200
+    assert resp.status == HTTPStatus.OK
     text = await resp.text()
     assert 'grub-reboot "ubuntu"' in text or "ubuntu" in text
 
@@ -230,7 +231,7 @@ async def test_webhook_validation_error(hass: HomeAssistant, setup_integration) 
     webhook_url = "/api/webhook/test_webhook_id"
 
     resp = await client.post(webhook_url, data="not valid json")
-    assert resp.status == 400
+    assert resp.status == HTTPStatus.BAD_REQUEST
     text = await resp.text()
     assert "Invalid JSON payload" in text
 
@@ -238,7 +239,7 @@ async def test_webhook_validation_error(hass: HomeAssistant, setup_integration) 
 async def test_webhook_unexpected_empty_payload(
     hass: HomeAssistant, setup_integration
 ) -> None:
-    """Test webhook returns 500 if payload is unexpectedly None."""
+    """Test webhook returns HTTPStatus.INTERNAL_SERVER_ERROR if payload is unexpectedly None."""
     client = setup_integration
     webhook_url = "/api/webhook/test_webhook_id"
 
@@ -247,7 +248,7 @@ async def test_webhook_unexpected_empty_payload(
         return_value=(None, None),
     ):
         resp = await client.post(webhook_url, data="dummy")
-        assert resp.status == 500
+        assert resp.status == HTTPStatus.INTERNAL_SERVER_ERROR
         text = await resp.text()
         assert text == "Unexpected empty payload"
 
@@ -255,7 +256,7 @@ async def test_webhook_unexpected_empty_payload(
 async def test_webhook_missing_mac_address(
     hass: HomeAssistant, setup_integration
 ) -> None:
-    """Test webhook returns 400 if mac_address is missing from the validated payload."""
+    """Test webhook returns HTTPStatus.BAD_REQUEST if mac_address is missing from the validated payload."""
     client = setup_integration
     webhook_url = "/api/webhook/test_webhook_id"
 
@@ -264,7 +265,7 @@ async def test_webhook_missing_mac_address(
         return_value=({"name": "test-server"}, None),
     ):
         resp = await client.post(webhook_url, data="dummy")
-        assert resp.status == 400
+        assert resp.status == HTTPStatus.BAD_REQUEST
         text = await resp.text()
         assert text == "MAC address missing from payload"
 
@@ -272,7 +273,7 @@ async def test_webhook_missing_mac_address(
 async def test_webhook_internal_server_error(
     hass: HomeAssistant, setup_integration
 ) -> None:
-    """Test webhook returns 500 on unexpected exception."""
+    """Test webhook returns HTTPStatus.INTERNAL_SERVER_ERROR on unexpected exception."""
     client = setup_integration
     webhook_url = "/api/webhook/test_webhook_id"
     payload = {"mac": "aa:bb:cc:dd:ee:ff", "name": "test-server"}
@@ -282,6 +283,6 @@ async def test_webhook_internal_server_error(
         side_effect=Exception("Boom"),
     ):
         resp = await client.post(webhook_url, json=payload)
-        assert resp.status == 500
+        assert resp.status == HTTPStatus.INTERNAL_SERVER_ERROR
         text = await resp.text()
         assert text == "Internal Server Error"

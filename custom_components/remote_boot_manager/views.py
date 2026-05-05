@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+from http import HTTPStatus
 
 from aiohttp import web
 from homeassistant.helpers.device_registry import format_mac
@@ -40,14 +41,14 @@ class BootloaderView(HomeAssistantView):
         mac_address = format_mac(mac_address)
 
         error_msg = None
-        status = 500
+        status = HTTPStatus.INTERNAL_SERVER_ERROR
         entries = None
         manager = None
         server = None
         bootloader = None
 
         if not mac_address:
-            error_msg, status = "Invalid MAC address format", 400
+            error_msg, status = "Invalid MAC address format", HTTPStatus.BAD_REQUEST
         elif not (entries := hass.config_entries.async_entries(DOMAIN)):
             error_msg = "Integration not configured"
         elif not (manager := entries[0].runtime_data):
@@ -56,15 +57,18 @@ class BootloaderView(HomeAssistantView):
             LOGGER.warning(
                 "Bootloader request for unknown MAC address: %s", mac_address
             )
-            error_msg, status = "Server not found", 404
+            error_msg, status = "Server not found", HTTPStatus.NOT_FOUND
         elif not (bootloader_name := server.bootloader):
             LOGGER.error("No bootloader configured for %s", mac_address)
-            error_msg, status = "No bootloader configured for this server", 400
+            error_msg, status = (
+                "No bootloader configured for this server",
+                HTTPStatus.BAD_REQUEST,
+            )
         elif not (bootloader := await async_get_bootloader(hass, bootloader_name)):
             LOGGER.error(
                 "Bootloader module %s not found for %s", bootloader_name, mac_address
             )
-            error_msg, status = "Bootloader not supported", 400
+            error_msg, status = "Bootloader not supported", HTTPStatus.BAD_REQUEST
 
         if error_msg or not bootloader or not server or not manager or not entries:
             return web.json_response(
@@ -88,4 +92,7 @@ class BootloaderView(HomeAssistantView):
             return bootloader.generate_boot_config(server_copy)
         except Exception:
             LOGGER.exception("Error generating boot config for %s", mac_address)
-            return web.json_response({"error": "Internal Server Error"}, status=500)
+            return web.json_response(
+                {"error": "Internal Server Error"},
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )

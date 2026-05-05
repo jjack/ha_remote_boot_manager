@@ -1,5 +1,6 @@
 """Tests for webhook functionality."""
 
+from http import HTTPStatus
 from unittest.mock import AsyncMock, MagicMock
 
 from aiohttp import web
@@ -15,7 +16,7 @@ async def test_validate_webhook_empty_body():
     payload, response = await async_validate_webhook_payload(request)
     assert payload is None
     assert response is not None
-    assert response.status == 400
+    assert response.status == HTTPStatus.BAD_REQUEST
     assert response.text == "empty body"
 
 
@@ -27,7 +28,7 @@ async def test_validate_webhook_payload_too_large():
     payload, response = await async_validate_webhook_payload(request)
     assert payload is None
     assert response is not None
-    assert response.status == 413
+    assert response.status == HTTPStatus.PAYLOAD_TOO_LARGE
 
 
 async def test_validate_webhook_invalid_json():
@@ -39,7 +40,7 @@ async def test_validate_webhook_invalid_json():
     payload, response = await async_validate_webhook_payload(request)
     assert payload is None
     assert response is not None
-    assert response.status == 400
+    assert response.status == HTTPStatus.BAD_REQUEST
     assert response.text == "Invalid JSON payload"
 
 
@@ -52,7 +53,7 @@ async def test_validate_webhook_invalid_schema():
     payload, response = await async_validate_webhook_payload(request)
     assert payload is None
     assert response is not None
-    assert response.status == 400
+    assert response.status == HTTPStatus.BAD_REQUEST
     assert response.text is not None
     assert "Invalid payload format" in response.text
 

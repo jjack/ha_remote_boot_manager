@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from http import HTTPStatus
 from typing import Any, cast
 
 import homeassistant.helpers.config_validation as cv
@@ -46,18 +47,22 @@ async def async_validate_webhook_payload(
         LOGGER.warning(
             "Ignoring remote boot manager push request webhook with empty body"
         )
-        return None, web.Response(status=400, text="empty body")
+        return None, web.Response(status=HTTPStatus.BAD_REQUEST, text="empty body")
 
     if len(body) > WEBHOOK_MAX_PAYLOAD_BYTES:
         LOGGER.warning("Webhook payload too large")
-        return None, web.Response(status=413, text="Payload too large")
+        return None, web.Response(
+            status=HTTPStatus.REQUEST_ENTITY_TOO_LARGE, text="Payload too large"
+        )
 
     try:
         raw_payload = await request.json()
     except ValueError:
         LOGGER.warning("Webhook payload is not valid JSON")
         LOGGER.debug("Received invalid JSON payload: %s", body)
-        return None, web.Response(status=400, text="Invalid JSON payload")
+        return None, web.Response(
+            status=HTTPStatus.BAD_REQUEST, text="Invalid JSON payload"
+        )
 
     LOGGER.debug("Received remote boot manager webhook with payload: %s", raw_payload)
 
@@ -66,7 +71,9 @@ async def async_validate_webhook_payload(
         payload = cast("dict[str, Any]", WEBHOOK_SCHEMA(raw_payload))
     except vol.Invalid as err:
         LOGGER.warning("Invalid webhook schema from incoming request: %s", err)
-        return None, web.Response(status=400, text=f"Invalid payload format: {err}")
+        return None, web.Response(
+            status=HTTPStatus.BAD_REQUEST, text=f"Invalid payload format: {err}"
+        )
 
     if not payload.get(CONF_NAME):
         payload[CONF_NAME] = DEFAULT_NAME

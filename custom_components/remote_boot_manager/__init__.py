@@ -8,6 +8,7 @@ https://github.com/jjack/hass-remote-boot-manager
 from __future__ import annotations
 
 from functools import partial
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 import homeassistant.helpers.config_validation as cv
@@ -107,12 +108,17 @@ async def async_setup_entry(
             if error_response:
                 return error_response
             if payload is None:
-                return web.Response(status=500, text="Unexpected empty payload")
+                return web.Response(
+                    status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    text="Unexpected empty payload",
+                )
 
             manager.async_process_webhook_payload(payload[CONF_MAC], payload)
-            return web.Response(status=200, text="OK")
+            return web.Response(status=HTTPStatus.OK, text="OK")
         except Exception:  # noqa: BLE001
-            return web.Response(status=500, text="Internal Server Error")
+            return web.Response(
+                status=HTTPStatus.INTERNAL_SERVER_ERROR, text="Internal Server Error"
+            )
 
     # Register the webhook to receive the boot options push requests
     webhook_id = entry.data.get("webhook_id")
