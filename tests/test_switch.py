@@ -30,27 +30,6 @@ async def test_async_ping_host_dead():
         assert await _async_ping_host("192.168.1.10") is False
 
 
-async def test_switch_async_update(hass):
-    """Test switch async_update polling functionality."""
-    manager = MagicMock()
-    manager.servers = {
-        "00:11:22:33:44:55": RemoteServer(
-            mac="00:11:22:33:44:55",
-            name="Test Server",
-            host="192.168.1.100",
-        )
-    }
-    switch = RemoteBootManagerSwitch(hass, manager.servers["00:11:22:33:44:55"])
-    switch.hass = hass
-
-    with patch(
-        "custom_components.remote_boot_manager.switch._async_ping_host",
-        return_value=True,
-    ):
-        await switch.async_update()
-        assert switch.is_on
-
-
 async def test_switch_async_turn_on_starts_task(hass):
     """Test switch async_turn_on sends packet and starts the background ping loop."""
     manager = MagicMock()

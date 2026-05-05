@@ -220,10 +220,6 @@ async def test_global_send_magic_packet_service(
             "aa:bb:cc:dd:ee:ff", ip_address="192.168.1.255", port=9
         )
 
-        mock_wake.assert_called_once_with(
-            "aa:bb:cc:dd:ee:ff", ip_address="192.168.1.255", port=9
-        )
-
 
 async def test_webhook_validation_error(hass: HomeAssistant, setup_integration) -> None:
     """Test webhook returns the error response from validation."""
