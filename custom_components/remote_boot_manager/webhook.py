@@ -9,9 +9,9 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from aiohttp import web
 from homeassistant.const import (
+    CONF_ADDRESS,
     CONF_BROADCAST_ADDRESS,
     CONF_BROADCAST_PORT,
-    CONF_HOST,
     CONF_MAC,
     CONF_NAME,
 )
@@ -20,18 +20,17 @@ from homeassistant.helpers.device_registry import format_mac
 from .const import (
     CONF_BOOT_OPTIONS,
     CONF_BOOTLOADER,
-    DEFAULT_NAME,
     LOGGER,
     WEBHOOK_MAX_PAYLOAD_BYTES,
 )
 
 WEBHOOK_SCHEMA = vol.Schema(
     {
+        vol.Required(CONF_NAME): cv.string,
         vol.Required(CONF_MAC): format_mac,
-        vol.Optional(CONF_NAME): cv.string,
-        vol.Optional(CONF_BOOTLOADER): cv.string,
-        vol.Optional(CONF_BOOT_OPTIONS): vol.All(cv.ensure_list, [cv.string]),
-        vol.Optional(CONF_HOST): cv.string,
+        vol.Required(CONF_ADDRESS): cv.string,
+        vol.Required(CONF_BOOTLOADER): cv.string,
+        vol.Required(CONF_BOOT_OPTIONS): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(CONF_BROADCAST_ADDRESS): cv.string,
         vol.Optional(CONF_BROADCAST_PORT): cv.port,
     }
@@ -76,6 +75,6 @@ async def async_validate_webhook_payload(
         )
 
     if not payload.get(CONF_NAME):
-        payload[CONF_NAME] = DEFAULT_NAME
+        payload[CONF_NAME] = payload[CONF_ADDRESS]
 
     return payload, None

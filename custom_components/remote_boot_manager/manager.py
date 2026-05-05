@@ -6,7 +6,11 @@ import dataclasses
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.const import CONF_BROADCAST_ADDRESS, CONF_BROADCAST_PORT
+from homeassistant.const import (
+    CONF_ADDRESS,
+    CONF_BROADCAST_ADDRESS,
+    CONF_BROADCAST_PORT,
+)
 from homeassistant.core import callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import format_mac
@@ -31,12 +35,11 @@ class RemoteServer:
 
     mac: str
     name: str
-    host: str | None = None
+    address: str | None = None
     bootloader: str | None = None
     boot_options: list[str] = field(default_factory=list)
     broadcast_address: str | None = None
     broadcast_port: int | None = None
-    entity_type: str = "button"
 
     # this comes from the UI, not the webhook
     next_boot_option: str = DEFAULT_BOOT_OPTION_NONE
@@ -47,14 +50,13 @@ class RemoteServer:
     def update_from_payload(self, payload: dict[str, Any]) -> None:
         """Safely update the server state from incoming webhook data."""
         self.name = payload.get("name", self.name)
+        self.address = payload.get(CONF_ADDRESS, self.address)
         self.bootloader = payload.get("bootloader", self.bootloader)
         self.boot_options = payload.get("boot_options", self.boot_options) or []
-        self.host = payload.get("host", self.host)
         self.broadcast_address = payload.get(
             CONF_BROADCAST_ADDRESS, self.broadcast_address
         )
         self.broadcast_port = payload.get(CONF_BROADCAST_PORT, self.broadcast_port)
-        self.entity_type = payload.get("entity_type", self.entity_type)
 
 
 class RemoteBootManager:
@@ -123,12 +125,11 @@ class RemoteBootManager:
             self.servers[mac_address] = RemoteServer(
                 mac=mac_address,
                 name=payload["name"],
+                address=payload.get(CONF_ADDRESS),
                 bootloader=payload.get("bootloader"),
                 boot_options=payload.get("boot_options") or [],
-                host=payload.get("host"),
                 broadcast_address=payload.get(CONF_BROADCAST_ADDRESS),
                 broadcast_port=payload.get(CONF_BROADCAST_PORT),
-                entity_type=payload.get("entity_type", "button"),
             )
 
             LOGGER.info(

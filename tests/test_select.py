@@ -43,6 +43,7 @@ async def test_select_init_model_name(hass):
         "00:11:22:33:44:55": RemoteServer(
             mac="00:11:22:33:44:55",
             name="Test Server",
+            address="test.local",
             broadcast_address="192.168.1.255",
             broadcast_port=9,
         )
@@ -59,6 +60,7 @@ async def test_select_init_model_name(hass):
         "AA:BB:CC:DD:EE:FF": RemoteServer(
             mac="AA:BB:CC:DD:EE:FF",
             name="Test Server 2",
+            address="test2.local",
         )
     }
     select2 = RemoteBootManagerSelect(manager, "AA:BB:CC:DD:EE:FF")
@@ -73,6 +75,7 @@ async def test_select_properties(hass):
         "00:11:22:33:44:55": RemoteServer(
             mac="00:11:22:33:44:55",
             name="Test",
+            address="test.local",
             boot_options=["ubuntu", "windows"],
             next_boot_option="windows",
         )
@@ -96,6 +99,7 @@ async def test_async_select_option(hass):
         "00:11:22:33:44:55": RemoteServer(
             mac="00:11:22:33:44:55",
             name="Test",
+            address="test.local",
         )
     }
     select = RemoteBootManagerSelect(manager, "00:11:22:33:44:55")

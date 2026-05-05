@@ -50,6 +50,7 @@ async def test_bootloader_view_no_bootloader(hass: HomeAssistant) -> None:
     mock_manager.servers = {
         "aa:bb:cc:dd:ee:ff": RemoteServer(
             mac="aa:bb:cc:dd:ee:ff",
+            address="test.local",
             name="test",
             bootloader=None,
         )
@@ -74,6 +75,7 @@ async def test_bootloader_view_unsupported_bootloader(hass: HomeAssistant) -> No
     mock_manager.servers = {
         "aa:bb:cc:dd:ee:ff": RemoteServer(
             mac="aa:bb:cc:dd:ee:ff",
+            address="test.local",
             name="test",
             bootloader="unsupported",
         )
@@ -102,6 +104,7 @@ async def test_bootloader_view_exception(hass: HomeAssistant) -> None:
     mock_manager.servers = {
         "aa:bb:cc:dd:ee:ff": RemoteServer(
             mac="aa:bb:cc:dd:ee:ff",
+            address="test.local",
             name="test",
             bootloader="grub",
         )
@@ -134,6 +137,7 @@ async def test_bootloader_view_success_read_only(hass: HomeAssistant) -> None:
     mock_manager.servers = {
         "aa:bb:cc:dd:ee:ff": RemoteServer(
             mac="aa:bb:cc:dd:ee:ff",
+            address="test.local",
             name="test",
             bootloader="grub",
             next_boot_option="windows",
@@ -176,6 +180,7 @@ async def test_bootloader_view_success_consume(hass: HomeAssistant) -> None:
     mock_manager.servers = {
         "aa:bb:cc:dd:ee:ff": RemoteServer(
             mac="aa:bb:cc:dd:ee:ff",
+            address="test.local",
             name="test",
             bootloader="grub",
             next_boot_option="windows",
@@ -213,6 +218,7 @@ async def test_bootloader_view_integration_not_configured(hass: HomeAssistant) -
         response = await view.get(mock_request, "00:11:22:33:44:55")
 
         assert response.status == HTTPStatus.INTERNAL_SERVER_ERROR
+        assert response.text is not None
         body = json.loads(response.text)
         assert body["error"] == "Integration not configured"
 
@@ -230,5 +236,6 @@ async def test_bootloader_view_integration_not_ready(hass: HomeAssistant) -> Non
         response = await view.get(mock_request, "00:11:22:33:44:55")
 
         assert response.status == HTTPStatus.INTERNAL_SERVER_ERROR
+        assert response.text is not None
         body = json.loads(response.text)
         assert body["error"] == "Integration not ready"

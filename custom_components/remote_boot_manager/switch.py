@@ -79,25 +79,31 @@ class RemoteBootManagerSwitch(SwitchEntity):
         )
 
     @property
+    def _ping_target(self) -> str | None:
+        """Return the target IP or hostname to ping."""
+        return self.server.address
+
+    @property
     def assumed_state(self) -> bool:
         """Flag this entity as unverified if we cannot ping it."""
-        return not bool(self.server.host)
+        return not bool(self._ping_target)
 
     @property
     def should_poll(self) -> bool:
         """Enable polling only if we have a host to ping."""
-        return bool(self.server.host)
+        return bool(self._ping_target)
 
     async def async_update(self) -> None:
         """Update entity state via standard polling."""
-        if not self.server.host:
+        target = self._ping_target
+        if not target:
             return
 
         # don't change the state until the ping task is done
         if self._ping_task and not self._ping_task.done():
             return
 
-        self._attr_is_on = await _async_ping_host(self.server.host)
+        self._attr_is_on = await _async_ping_host(target)
 
     async def async_turn_on(self, **kwargs: Any) -> None:  # noqa: ARG002
         """Turn the entity on."""
@@ -114,11 +120,12 @@ class RemoteBootManagerSwitch(SwitchEntity):
             partial(wakeonlan.send_magic_packet, self.server.mac, **wol_kwargs)
         )
 
-        if self.server.host:
+        target = self._ping_target
+        if target:
             if self._ping_task and not self._ping_task.done():
                 self._ping_task.cancel()
             self._ping_task = self.hass.async_create_background_task(
-                self._async_ping_loop(self.server.host, target_state=True),
+                self._async_ping_loop(target, target_state=True),
                 "wol_ping_on",
             )
 
@@ -130,11 +137,12 @@ class RemoteBootManagerSwitch(SwitchEntity):
         if self._turn_off_script:
             await self._turn_off_script.async_run(context=self._context)
 
-        if self.server.host:
+        target = self._ping_target
+        if target:
             if self._ping_task and not self._ping_task.done():
                 self._ping_task.cancel()
             self._ping_task = self.hass.async_create_background_task(
-                self._async_ping_loop(self.server.host, target_state=False),
+                self._async_ping_loop(target, target_state=False),
                 "wol_ping_off",
             )
 

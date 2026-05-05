@@ -33,8 +33,8 @@ def manager(hass, mock_store):
 async def test_async_process_webhook_payload_new_server(manager, hass):
     """Test that a new server is added correctly from a payload."""
     payload = {
+        "address": "test.local",
         "name": "test-server",
-        "host": "192.168.1.100",
         "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
     }
@@ -48,7 +48,7 @@ async def test_async_process_webhook_payload_new_server(manager, hass):
         server = manager.servers["00:11:22:33:44:55"]
         assert isinstance(server, RemoteServer)
         assert server.name == "test-server"
-        assert server.host == "192.168.1.100"
+        assert server.address == "test.local"
         # make sure that (none) is prepended
         assert server.boot_options == [DEFAULT_BOOT_OPTION_NONE, "ubuntu", "windows"]
 
@@ -58,8 +58,8 @@ async def test_async_process_webhook_payload_new_server(manager, hass):
 async def test_async_process_webhook_payload_none_option_already_present(manager, hass):
     """Test that the default none boot option is not duplicated if already present."""
     payload = {
+        "address": "test.local",
         "name": "test-server",
-        "host": "192.168.1.100",
         "bootloader": "grub",
         "boot_options": [DEFAULT_BOOT_OPTION_NONE, "ubuntu", "windows"],
     }
@@ -75,12 +75,14 @@ async def test_async_process_webhook_payload_update_existing_server(manager, has
     # Setup existing server
     manager.servers["00:11:22:33:44:55"] = RemoteServer(
         mac="00:11:22:33:44:55",
+        address="old-hostname.local",
         name="old-hostname",
         bootloader="grub",
         boot_options=["ubuntu"],
     )
 
     payload = {
+        "address": "new-hostname.local",
         "name": "new-hostname",
         "bootloader": "grub",
         "boot_options": ["ubuntu", "arch"],
@@ -97,6 +99,7 @@ async def test_async_process_webhook_payload_update_existing_server(manager, has
 
         server = manager.servers["00:11:22:33:44:55"]
         assert server.name == "new-hostname"
+        assert server.address == "new-hostname.local"
         assert server.boot_options == [DEFAULT_BOOT_OPTION_NONE, "ubuntu", "arch"]
 
         # Verify device registry was updated with the new hostname
@@ -109,6 +112,7 @@ async def test_async_set_and_consume_next_boot_option(manager, hass):
     """Test setting and safely consuming the next boot option."""
     manager.servers["00:11:22:33:44:55"] = RemoteServer(
         mac="00:11:22:33:44:55",
+        address="test.local",
         name="test-server",
         bootloader="grub",
         boot_options=[DEFAULT_BOOT_OPTION_NONE, "ubuntu", "windows"],
@@ -131,6 +135,7 @@ async def test_async_remove_server_invalid_mac(manager, hass):
     """Test removing a non-existent server does nothing."""
     manager.servers["00:11:22:33:44:55"] = RemoteServer(
         mac="00:11:22:33:44:55",
+        address="test.local",
         name="test-server",
     )
     with patch.object(manager, "_save") as mock_save:
@@ -156,8 +161,8 @@ async def test_async_load_valid_data(manager, mock_store):
         "servers": {
             "00:11:22:33:44:55": {
                 "mac": "00:11:22:33:44:55",
+                "address": "stored.local",
                 "name": "Stored Server",
-                "host": "192.168.1.50",
             }
         }
     }
@@ -165,8 +170,8 @@ async def test_async_load_valid_data(manager, mock_store):
 
     assert "00:11:22:33:44:55" in manager.servers
     server = manager.servers["00:11:22:33:44:55"]
+    assert server.address == "stored.local"
     assert server.name == "Stored Server"
-    assert server.host == "192.168.1.50"
 
 
 async def test_async_load_invalid_data_format(manager, mock_store):
@@ -191,6 +196,7 @@ async def test_async_load_filters_extra_keys(manager, mock_store):
         "servers": {
             "00:11:22:33:44:55": {
                 "mac": "00:11:22:33:44:55",
+                "address": "filtered.local",
                 "name": "Filtered Server",
                 "unknown_future_key": "some_value",
             }
@@ -208,7 +214,7 @@ async def test_async_load_filters_extra_keys(manager, mock_store):
 async def test_async_purge_data(manager, mock_store):
     """Test that purging data clears servers and removes the store file."""
     manager.servers["00:11:22:33:44:55"] = RemoteServer(
-        mac="00:11:22:33:44:55", name="test"
+        mac="00:11:22:33:44:55", name="test", address="test.local"
     )
     await manager.async_purge_data()
     assert not manager.servers
@@ -219,12 +225,14 @@ async def test_async_process_webhook_payload_update_no_rename(manager, hass):
     """Test that an existing server is updated without renaming the device."""
     manager.servers["00:11:22:33:44:55"] = RemoteServer(
         mac="00:11:22:33:44:55",
+        address="same-hostname.local",
         name="same-hostname",
         bootloader="grub",
         boot_options=["ubuntu"],
     )
 
     payload = {
+        "address": "same-hostname.local",
         "name": "same-hostname",  # name is the same
         "bootloader": "refind",  # bootloader changed
         "boot_options": ["ubuntu", "arch"],
@@ -248,9 +256,10 @@ async def test_async_process_webhook_payload_update_device_not_found(manager, ha
     """Test that an update with a rename does not fail if the device is not found."""
     manager.servers["00:11:22:33:44:55"] = RemoteServer(
         mac="00:11:22:33:44:55",
+        address="old-hostname.local",
         name="old-hostname",
     )
-    payload = {"name": "new-hostname"}
+    payload = {"address": "old-hostname.local", "name": "new-hostname"}
 
     with patch("custom_components.remote_boot_manager.manager.dr.async_get") as mock_dr:
         mock_registry = MagicMock()
@@ -268,11 +277,16 @@ async def test_async_process_webhook_payload_resets_invalid_next_boot(manager, h
     """Test that next_boot_option is reset if it becomes invalid after an update."""
     manager.servers["00:11:22:33:44:55"] = RemoteServer(
         mac="00:11:22:33:44:55",
+        address="test.local",
         name="test-server",
         boot_options=["ubuntu", "windows"],
         next_boot_option="windows",  # This will become invalid
     )
-    payload = {"name": "test-server", "boot_options": ["ubuntu", "fedora"]}
+    payload = {
+        "address": "test.local",
+        "name": "test-server",
+        "boot_options": ["ubuntu", "fedora"],
+    }
 
     manager.async_process_webhook_payload("00:11:22:33:44:55", payload)
 
@@ -301,6 +315,7 @@ async def test_async_remove_server(manager, hass):
     """Test removing a server from the manager."""
     manager.servers["00:11:22:33:44:55"] = RemoteServer(
         mac="00:11:22:33:44:55",
+        address="test.local",
         name="test-server",
         bootloader="grub",
     )

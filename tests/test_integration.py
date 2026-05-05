@@ -47,6 +47,7 @@ async def discovered_client(hass: HomeAssistant, setup_integration):
     webhook_url = "/api/webhook/test_webhook_id"
     payload = {
         "mac": "aa:bb:cc:dd:ee:ff",
+        "address": "test.local",
         "name": "test-server",
         "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
@@ -63,6 +64,7 @@ async def test_webhook_discovery(hass: HomeAssistant, setup_integration) -> None
     webhook_url = "/api/webhook/test_webhook_id"
     payload = {
         "mac": "aa:bb:cc:dd:ee:ff",
+        "address": "test.local",
         "name": "test-server",
         "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
@@ -89,7 +91,13 @@ async def test_minimal_webhook_discovery_and_switch(
     """Test discovery and switch functionality with a minimal payload (mac and name)."""
     client = setup_integration
     webhook_url = "/api/webhook/test_webhook_id"
-    payload = {"mac": "de:ad:be:ef:00:01", "name": "minimal-server"}
+    payload = {
+        "mac": "de:ad:be:ef:00:01",
+        "address": "minimal.local",
+        "name": "minimal-server",
+        "bootloader": "grub",
+        "boot_options": ["ubuntu"],
+    }
 
     resp = await client.post(webhook_url, json=payload)
     assert resp.status == HTTPStatus.OK
@@ -102,7 +110,10 @@ async def test_minimal_webhook_discovery_and_switch(
     assert hass.states.get(entity_id_switch) is not None
     select_state = hass.states.get(entity_id_select)
     assert select_state is not None
-    assert select_state.attributes.get("options") == [DEFAULT_BOOT_OPTION_NONE]
+    assert select_state.attributes.get("options") == [
+        DEFAULT_BOOT_OPTION_NONE,
+        "ubuntu",
+    ]
 
     # Verify the switch works by calling turn_on
     with patch(
@@ -258,7 +269,7 @@ async def test_webhook_missing_mac_address(
 
     with patch(
         "custom_components.remote_boot_manager.async_validate_webhook_payload",
-        return_value=({"name": "test-server"}, None),
+        return_value=({"address": "test.local", "name": "test-server"}, None),
     ):
         resp = await client.post(webhook_url, data="dummy")
         assert resp.status == HTTPStatus.BAD_REQUEST
@@ -272,7 +283,13 @@ async def test_webhook_internal_server_error(
     """Test webhook returns HTTPStatus.INTERNAL_SERVER_ERROR on unexpected exception."""
     client = setup_integration
     webhook_url = "/api/webhook/test_webhook_id"
-    payload = {"mac": "aa:bb:cc:dd:ee:ff", "name": "test-server"}
+    payload = {
+        "mac": "aa:bb:cc:dd:ee:ff",
+        "address": "test.local",
+        "name": "test-server",
+        "bootloader": "grub",
+        "boot_options": ["ubuntu", "windows"],
+    }
 
     with patch(
         "custom_components.remote_boot_manager.manager.RemoteBootManager.async_process_webhook_payload",

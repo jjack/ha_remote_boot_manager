@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 from aiohttp import web
 
-from custom_components.remote_boot_manager.const import DEFAULT_NAME
 from custom_components.remote_boot_manager.webhook import async_validate_webhook_payload
 
 
@@ -48,8 +47,8 @@ async def test_validate_webhook_invalid_json():
 async def test_validate_webhook_invalid_schema():
     """Test validation with invalid schema."""
     request = MagicMock(spec=web.Request)
-    request.text = AsyncMock(return_value='{"name": "test"}')  # missing mac
-    request.json = AsyncMock(return_value={"name": "test"})
+    request.text = AsyncMock(return_value='{"address": "test.local"}')  # missing mac
+    request.json = AsyncMock(return_value={"address": "test.local"})
 
     payload, response = await async_validate_webhook_payload(request)
     assert payload is None
@@ -64,15 +63,15 @@ async def test_validate_webhook_valid_payload():
     request = MagicMock(spec=web.Request)
     valid_data = {
         "mac": "00:11:22:33:44:55",
+        "address": "test.local",
         "name": "test",
         "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
-        "host": "192.168.1.100",
         "broadcast_address": "192.168.1.255",
         "broadcast_port": 9,
     }
     request.text = AsyncMock(
-        return_value='{"mac": "00:11:22:33:44:55", "name": "test", "bootloader": "grub", "boot_options": ["ubuntu", "windows"], "host": "192.168.1.100", "broadcast_address": "192.168.1.255", "broadcast_port": 9}'
+        return_value='{"mac": "00:11:22:33:44:55", "address": "test.local", "name": "test", "bootloader": "grub", "boot_options": ["ubuntu", "windows"], "broadcast_address": "192.168.1.255", "broadcast_port": 9}'
     )
     request.json = AsyncMock(return_value=valid_data)
 
@@ -80,25 +79,31 @@ async def test_validate_webhook_valid_payload():
     assert response is None
     assert payload is not None
     assert payload["mac"] == "00:11:22:33:44:55"
+    assert payload["address"] == "test.local"
     assert payload["name"] == "test"
     assert payload["bootloader"] == "grub"
     assert payload["boot_options"] == ["ubuntu", "windows"]
-    assert payload["host"] == "192.168.1.100"
     assert payload["broadcast_address"] == "192.168.1.255"
     assert payload["broadcast_port"] == 9
 
 
-async def test_validate_webhook_missing_name_uses_default():
-    """Test validation uses default name if not provided."""
+async def test_validate_webhook_empty_name_uses_address():
+    """Test validation uses address for name if it is empty."""
     request = MagicMock(spec=web.Request)
     valid_data = {
         "mac": "00:11:22:33:44:55",
+        "address": "test.local",
+        "name": "",
+        "bootloader": "grub",
+        "boot_options": ["ubuntu", "windows"],
     }
-    request.text = AsyncMock(return_value='{"mac": "00:11:22:33:44:55"}')
+    request.text = AsyncMock(
+        return_value='{"mac": "00:11:22:33:44:55", "address": "test.local", "name": "", "bootloader": "grub", "boot_options": ["ubuntu", "windows"]}'
+    )
     request.json = AsyncMock(return_value=valid_data)
 
     payload, response = await async_validate_webhook_payload(request)
     assert response is None
     assert payload is not None
     assert payload["mac"] == "00:11:22:33:44:55"
-    assert payload["name"] == DEFAULT_NAME
+    assert payload["name"] == "test.local"

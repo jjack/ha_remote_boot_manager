@@ -10,10 +10,3 @@ logger:
   default: info
   logs:
     custom_components.remote_boot_manager: debug
-
-switch:
-  - platform: remote_boot_manager
-    name: "Office PC"
-    mac: "00:11:22:33:44:55"
-    broadcast_address: "255.255.255.255"
-    broadcast_port: 9
