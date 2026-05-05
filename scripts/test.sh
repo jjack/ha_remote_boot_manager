@@ -4,4 +4,4 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-pytest "$@"
+pytest --cov=custom_components.remote_boot_manager "$@"
