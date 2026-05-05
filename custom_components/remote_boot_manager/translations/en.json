@@ -26,5 +26,52 @@
         "abort": {
             "already_configured": "This entry is already configured."
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Manage Servers",
+                "description": "{servers}\n\nWhat would you like to do?",
+                "data": {
+                    "action": "Action"
+                }
+            },
+            "add": {
+                "title": "Add Server",
+                "data": {
+                    "mac": "MAC Address",
+                    "name": "Name",
+                    "host": "IP Address or Hostname",
+                    "broadcast_address": "Broadcast Address (optional)",
+                    "broadcast_port": "Broadcast Port (optional)"
+                }
+            },
+            "edit_select": {
+                "title": "Edit Server",
+                "data": {
+                    "mac": "Select Server"
+                }
+            },
+            "edit": {
+                "title": "Edit Server",
+                "description": "{warning}",
+                "data": {
+                    "name": "Name",
+                    "host": "IP Address or Hostname",
+                    "broadcast_address": "Broadcast Address (optional)",
+                    "broadcast_port": "Broadcast Port (optional)"
+                }
+            },
+            "remove": {
+                "title": "Remove Server",
+                "data": {
+                    "mac": "Select Server to Remove"
+                }
+            }
+        },
+        "error": {
+            "mac_exists": "A server with this MAC address already exists.",
+            "invalid_mac": "Invalid MAC address format."
+        }
     }
 }

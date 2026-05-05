@@ -47,7 +47,6 @@ WAKE_ON_LAN_SEND_MAGIC_PACKET_SCHEMA = vol.Schema(
 )
 
 PLATFORMS: list[Platform] = [
-    Platform.BUTTON,
     Platform.SELECT,
     Platform.SWITCH,
 ]

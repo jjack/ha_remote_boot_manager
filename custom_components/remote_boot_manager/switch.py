@@ -9,11 +9,7 @@ from typing import TYPE_CHECKING, Any
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 import wakeonlan
-from homeassistant.components.switch import (
-    PLATFORM_SCHEMA,
-    SwitchDeviceClass,
-    SwitchEntity,
-)
+from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.const import (
     CONF_BROADCAST_ADDRESS,
     CONF_BROADCAST_PORT,
@@ -45,37 +41,6 @@ if TYPE_CHECKING:
     from .data import RemoteBootManagerConfigEntry
 
 
-def _validate_legacy_only(config: dict[str, Any]) -> dict[str, Any]:
-    """Ensure advanced features aren't configured via YAML."""
-    if CONF_BOOTLOADER in config or CONF_BOOT_OPTIONS in config:
-        mac = config.get(CONF_MAC)
-        msg = (
-            "YAML configuration is strictly for backwards compatibility with the Wake "
-            f"On Lan integration. Do not use '{CONF_BOOTLOADER}' or "
-            f"'{CONF_BOOT_OPTIONS}'. Use the remote-boot-agent to configure advanced "
-            f"features for {mac}."
-        )
-        raise vol.Invalid(msg)
-    return config
-
-
-PLATFORM_SCHEMA = vol.All(
-    PLATFORM_SCHEMA.extend(
-        {
-            vol.Required(CONF_MAC): cv.string,
-            vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-            vol.Optional(CONF_HOST): cv.string,
-            vol.Optional(CONF_BROADCAST_ADDRESS): cv.string,
-            vol.Optional(CONF_BROADCAST_PORT): cv.port,
-            vol.Optional(CONF_BOOTLOADER): cv.string,
-            vol.Optional(CONF_BOOT_OPTIONS): vol.All(cv.ensure_list, [cv.string]),
-            vol.Optional(CONF_TURN_OFF): cv.SCRIPT_SCHEMA,
-        }
-    ),
-    _validate_legacy_only,
-)
-
-
 async def _async_ping_host(host: str) -> bool:
     """Ping the given host asynchronously."""
     try:
@@ -85,30 +50,6 @@ async def _async_ping_host(host: str) -> bool:
         return False
     else:
         return result.is_alive
-
-
-# this provides backwards compatibility with the Wake On Lan integration's
-# YAML config, but is not intended for anything else.
-async def async_setup_platform(
-    hass: HomeAssistant,
-    config: ConfigType,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None,  # noqa: ARG001
-) -> None:
-    """Set up a remote_boot_manager switch from YAML."""
-    server = RemoteServer(
-        mac=config["mac"],
-        name=config["name"],
-        host=config.get("host"),
-        broadcast_address=config.get("broadcast_address"),
-        broadcast_port=config.get("broadcast_port"),
-        off_action=config.get("turn_off"),
-    )
-
-    # Track yaml servers for the Options Flow UI display
-    hass.data.setdefault(f"{DOMAIN}.yaml_servers", []).append(server)
-
-    async_add_entities([RemoteBootManagerSwitch(hass, server)])
 
 
 class RemoteBootManagerSwitch(SwitchEntity):
@@ -236,8 +177,7 @@ async def async_setup_entry(
     def async_add_server_switch(mac_address: str) -> None:
         """Add a switch entity for a newly discovered server."""
         server = manager.servers[mac_address]
-        if server.entity_type == "switch":
-            async_add_entities([RemoteBootManagerSwitch(hass, server)])
+        async_add_entities([RemoteBootManagerSwitch(hass, server)])
 
     # Add entities for servers that already exist in the manager
     for mac in manager.servers:

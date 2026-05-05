@@ -84,36 +84,3 @@ async def test_validate_webhook_valid_payload():
     assert payload["host"] == "192.168.1.100"
     assert payload["broadcast_address"] == "192.168.1.255"
     assert payload["broadcast_port"] == 9
-    assert payload["entity_type"] == "button"
-
-
-async def test_validate_webhook_entity_type():
-    """Test validation with explicit and invalid entity types."""
-    request = MagicMock(spec=web.Request)
-
-    # Explicit valid entity type
-    request.text = AsyncMock(return_value="{}")
-    request.json = AsyncMock(
-        return_value={
-            "mac": "00:11:22:33:44:55",
-            "name": "test",
-            "entity_type": "switch",
-        }
-    )
-    payload, response = await async_validate_webhook_payload(request)
-    assert response is None
-    assert payload is not None
-    assert payload["entity_type"] == "switch"
-
-    # Invalid entity type
-    request.json = AsyncMock(
-        return_value={
-            "mac": "00:11:22:33:44:55",
-            "name": "test",
-            "entity_type": "sensor",
-        }
-    )
-    payload, response = await async_validate_webhook_payload(request)
-    assert payload is None
-    assert response is not None
-    assert response.status == 400

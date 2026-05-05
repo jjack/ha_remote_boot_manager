@@ -19,6 +19,7 @@ from homeassistant.helpers.device_registry import format_mac
 from .const import (
     CONF_BOOT_OPTIONS,
     CONF_BOOTLOADER,
+    DEFAULT_NAME,
     LOGGER,
     WEBHOOK_MAX_PAYLOAD_BYTES,
 )
@@ -26,13 +27,12 @@ from .const import (
 WEBHOOK_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_MAC): format_mac,
-        vol.Required(CONF_NAME): cv.string,
+        vol.Optional(CONF_NAME): cv.string,
         vol.Optional(CONF_BOOTLOADER): cv.string,
         vol.Optional(CONF_BOOT_OPTIONS): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(CONF_HOST): cv.string,
         vol.Optional(CONF_BROADCAST_ADDRESS): cv.string,
         vol.Optional(CONF_BROADCAST_PORT): cv.port,
-        vol.Optional("entity_type", default="button"): vol.In(["button", "switch"]),
     }
 )
 
@@ -67,5 +67,8 @@ async def async_validate_webhook_payload(
     except vol.Invalid as err:
         LOGGER.warning("Invalid webhook schema from incoming request: %s", err)
         return None, web.Response(status=400, text=f"Invalid payload format: {err}")
+
+    if not payload.get(CONF_NAME):
+        payload[CONF_NAME] = DEFAULT_NAME
 
     return payload, None
