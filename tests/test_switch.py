@@ -322,17 +322,15 @@ async def test_async_setup_entry(hass):
     mock_manager = MagicMock()
     mock_manager.servers = {
         "00:11:22:33:44:55": MagicMock(
-            entity_type="switch",
             mac="00:11:22:33:44:55",
-            name="test switch",
+            name="test switch 1",
             off_action=None,
             broadcast_address=None,
             broadcast_port=None,
         ),
         "AA:BB:CC:DD:EE:FF": MagicMock(
-            entity_type="button",
             mac="AA:BB:CC:DD:EE:FF",
-            name="test button",
+            name="test switch 2",
             off_action=None,
             broadcast_address=None,
             broadcast_port=None,
@@ -346,15 +344,14 @@ async def test_async_setup_entry(hass):
     ) as mock_connect:
         await async_setup_entry(hass, mock_entry, async_add_entities)
 
-        # Only the switch entity should be added
-        assert async_add_entities.call_count == 1
+        # Both switch entities should be added
+        assert async_add_entities.call_count == 2
         mock_connect.assert_called_once()
         mock_entry.async_on_unload.assert_called_once()
 
         # Verify the dispatcher callback adds the new entity
         callback = mock_connect.call_args[0][2]
         mock_manager.servers["11:22:33:44:55:66"] = MagicMock(
-            entity_type="switch",
             mac="11:22:33:44:55:66",
             name="new switch",
             off_action=None,
@@ -362,19 +359,7 @@ async def test_async_setup_entry(hass):
             broadcast_port=None,
         )
         callback("11:22:33:44:55:66")
-        assert async_add_entities.call_count == 2
-
-        # Verify it does not add a button entity
-        mock_manager.servers["22:33:44:55:66:77"] = MagicMock(
-            entity_type="button",
-            mac="22:33:44:55:66:77",
-            name="new button",
-            off_action=None,
-            broadcast_address=None,
-            broadcast_port=None,
-        )
-        callback("22:33:44:55:66:77")
-        assert async_add_entities.call_count == 2
+        assert async_add_entities.call_count == 3
 
 
 async def test_async_update_skips_when_ping_task_active(hass):
