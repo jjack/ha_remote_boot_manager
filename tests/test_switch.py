@@ -2,16 +2,11 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-import voluptuous as vol
-
 from custom_components.remote_boot_manager.manager import RemoteServer
 from custom_components.remote_boot_manager.switch import (
-    PLATFORM_SCHEMA,
     RemoteBootManagerSwitch,
     _async_ping_host,
     async_setup_entry,
-    async_setup_platform,
 )
 
 
@@ -33,38 +28,6 @@ async def test_async_ping_host_dead():
         side_effect=Exception("Boom"),
     ):
         assert await _async_ping_host("192.168.1.10") is False
-
-
-async def test_async_setup_platform_valid(hass):
-    """Test setting up platform from YAML."""
-    config = {
-        "platform": "remote_boot_manager",
-        "mac": "00:11:22:33:44:55",
-        "name": "Test PC",
-        "host": "192.168.1.100",
-    }
-    async_add_entities = MagicMock()
-    await async_setup_platform(hass, config, async_add_entities)
-
-    async_add_entities.assert_called_once()
-    switch = async_add_entities.call_args[0][0][0]
-    assert switch.server.mac == "00:11:22:33:44:55"
-    assert switch.server.name == "Test PC"
-    assert switch.server.host == "192.168.1.100"
-
-
-def test_platform_schema_rejects_bootloader():
-    """Test that the platform schema rejects legacy YAML with a bootloader."""
-    config = {
-        "platform": "remote_boot_manager",
-        "mac": "00:11:22:33:44:55",
-        "bootloader": "grub",
-    }
-
-    with pytest.raises(vol.Invalid) as exc:
-        PLATFORM_SCHEMA(config)
-
-    assert "backwards compatibility" in str(exc.value)
 
 
 async def test_switch_async_update(hass):

@@ -6,17 +6,8 @@ import asyncio
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 import wakeonlan
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
-from homeassistant.const import (
-    CONF_BROADCAST_ADDRESS,
-    CONF_BROADCAST_PORT,
-    CONF_HOST,
-    CONF_MAC,
-    CONF_NAME,
-)
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -24,21 +15,16 @@ from homeassistant.helpers.script import Script
 from icmplib import async_ping
 
 from .const import (
-    CONF_BOOT_OPTIONS,
-    CONF_BOOTLOADER,
-    CONF_TURN_OFF,
-    DEFAULT_NAME,
     DOMAIN,
     SIGNAL_NEW_SERVER,
 )
-from .manager import RemoteServer
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
-    from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
     from .data import RemoteBootManagerConfigEntry
+    from .manager import RemoteServer
 
 
 async def _async_ping_host(host: str) -> bool:

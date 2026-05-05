@@ -109,7 +109,7 @@ async def async_setup_entry(
             if payload is None:
                 return web.Response(status=500, text="Unexpected empty payload")
 
-            manager.async_process_webhook_payload(payload.get(CONF_MAC), payload)
+            manager.async_process_webhook_payload(payload[CONF_MAC], payload)
             return web.Response(status=200, text="OK")
         except Exception:  # noqa: BLE001
             return web.Response(status=500, text="Internal Server Error")
