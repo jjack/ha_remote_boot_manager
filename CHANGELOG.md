@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.1](https://github.com/jjack/hass-remote-boot-manager/compare/v0.4.0...v0.4.1) (2026-05-05)
+
+
+### Bug Fixes
+
+* adding  _attr_name back ([31db373](https://github.com/jjack/hass-remote-boot-manager/commit/31db3736636123d54da500594181f999a1fe826f))
+* correcting potential memory leak during task cancellation ([c3c1148](https://github.com/jjack/hass-remote-boot-manager/commit/c3c1148a1a13d4cf0b1a3aa87bfb6257ab66cb08))
+* ensuring webhooks have a mac address in the payload ([09a0625](https://github.com/jjack/hass-remote-boot-manager/commit/09a06251bef93bbb19e51a058d4d85c63d2617dc))
+* making sure that the bootloader view is registered only once ([642d1b8](https://github.com/jjack/hass-remote-boot-manager/commit/642d1b8b4f55b37846e961a860d833ce475e3dde))
+* updating tests to no longer use the global manager ([7ebc599](https://github.com/jjack/hass-remote-boot-manager/commit/7ebc5998d25a4a5cd4ec06e1f5303540848c29de))
+
 ## [0.4.0](https://github.com/jjack/hass-remote-boot-manager/compare/v0.3.1...v0.4.0) (2026-05-04)
 
 
