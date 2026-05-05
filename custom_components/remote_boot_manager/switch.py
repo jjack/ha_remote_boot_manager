@@ -146,17 +146,31 @@ class RemoteBootManagerSwitch(SwitchEntity):
                 "wol_ping_off",
             )
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Clean up background tasks when the entity is removed."""
+        if self._ping_task and not self._ping_task.done():
+            self._ping_task.cancel()
+        await super().async_will_remove_from_hass()
+
     async def _async_ping_loop(self, host: str, *, target_state: bool) -> None:
         """Ping host rapidly for 3 minutes after turn-on/off."""
-        await asyncio.sleep(10)
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            return
+
         for _ in range(36):  # 36 iterations * 5 seconds = 180 seconds (3 mins)
             is_awake = await _async_ping_host(host)
             if is_awake == target_state:
                 return
-            await asyncio.sleep(5)
+            try:
+                await asyncio.sleep(5)
+            except asyncio.CancelledError:
+                return
 
         self._attr_is_on = not target_state
-        self.async_write_ha_state()
+        if self.hass is not None:
+            self.async_write_ha_state()
 
 
 async def async_setup_entry(

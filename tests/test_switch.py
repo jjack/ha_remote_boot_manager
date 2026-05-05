@@ -1,5 +1,6 @@
 """Tests for Remote Boot Manager switch."""
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.remote_boot_manager.manager import RemoteServer
@@ -393,3 +394,96 @@ async def test_async_update_polls_when_no_active_task(hass):
         await switch.async_update()
         mock_ping.assert_called_once_with("test.local")
         assert switch._attr_is_on is False
+
+
+async def test_switch_will_remove_from_hass_cancels_task(hass):
+    """Test that removing the entity cancels an active ping task."""
+    manager = MagicMock()
+    manager.servers = {
+        "00:11:22:33:44:55": RemoteServer(
+            mac="00:11:22:33:44:55",
+            name="Test Server",
+            address="test.local",
+        )
+    }
+    switch = RemoteBootManagerSwitch(hass, manager.servers["00:11:22:33:44:55"])
+    switch.hass = hass
+
+    mock_task = MagicMock()
+    mock_task.done.return_value = False
+    switch._ping_task = mock_task
+
+    await switch.async_will_remove_from_hass()
+
+    mock_task.cancel.assert_called_once()
+
+
+async def test_switch_will_remove_from_hass_ignores_done_task(hass):
+    """Test that removing the entity ignores an already done ping task."""
+    manager = MagicMock()
+    manager.servers = {
+        "00:11:22:33:44:55": RemoteServer(
+            mac="00:11:22:33:44:55",
+            name="Test Server",
+            address="test.local",
+        )
+    }
+    switch = RemoteBootManagerSwitch(hass, manager.servers["00:11:22:33:44:55"])
+    switch.hass = hass
+
+    mock_task = MagicMock()
+    mock_task.done.return_value = True
+    switch._ping_task = mock_task
+
+    await switch.async_will_remove_from_hass()
+
+    mock_task.cancel.assert_not_called()
+
+
+async def test_switch_async_ping_loop_cancelled_initial_sleep(hass):
+    """Test the background ping loop handles cancellation correctly during initial sleep."""
+    manager = MagicMock()
+    manager.servers = {
+        "00:11:22:33:44:55": RemoteServer(
+            mac="00:11:22:33:44:55",
+            name="Test",
+            address="test.local",
+        )
+    }
+    switch = RemoteBootManagerSwitch(hass, manager.servers["00:11:22:33:44:55"])
+    switch.hass = hass
+    switch.async_write_ha_state = MagicMock()
+
+    with patch("asyncio.sleep", side_effect=asyncio.CancelledError):
+        await switch._async_ping_loop("192.168.1.100", target_state=True)
+
+        # Should exit cleanly without throwing an exception or writing state
+        switch.async_write_ha_state.assert_not_called()
+
+
+async def test_switch_async_ping_loop_cancelled_inner_sleep(hass):
+    """Test the background ping loop handles cancellation correctly during loop sleep."""
+    manager = MagicMock()
+    manager.servers = {
+        "00:11:22:33:44:55": RemoteServer(
+            mac="00:11:22:33:44:55",
+            name="Test",
+            address="test.local",
+        )
+    }
+    switch = RemoteBootManagerSwitch(hass, manager.servers["00:11:22:33:44:55"])
+    switch.hass = hass
+    switch.async_write_ha_state = MagicMock()
+
+    with (
+        patch("asyncio.sleep", side_effect=[None, asyncio.CancelledError]),
+        patch(
+            "custom_components.remote_boot_manager.switch._async_ping_host",
+            return_value=False,
+        ) as mock_ping,
+    ):
+        await switch._async_ping_loop("192.168.1.100", target_state=True)
+
+        # Ping should be called once, then CancelledError breaks the loop cleanly
+        mock_ping.assert_called_once()
+        switch.async_write_ha_state.assert_not_called()
