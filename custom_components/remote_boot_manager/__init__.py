@@ -80,6 +80,10 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:  # n
         schema=WAKE_ON_LAN_SEND_MAGIC_PACKET_SCHEMA,
     )
 
+    # Register the unauthenticated bootloader get request view
+    # (ie - GET /api/remote_boot_manager/bootloader/{mac_address})   # noqa: ERA001
+    hass.http.register_view(BootloaderView())
+
     return True
 
 
@@ -91,10 +95,6 @@ async def async_setup_entry(
     manager = RemoteBootManager(hass)
     await manager.async_load()
     entry.runtime_data = manager
-
-    # Register the unauthenticated bootloader get request view
-    # (ie - GET /api/remote_boot_manager/bootloader/{mac_address})  # noqa: ERA001
-    hass.http.register_view(BootloaderView())
 
     async def handle_webhook(
         hass: HomeAssistant,  # noqa: ARG001
