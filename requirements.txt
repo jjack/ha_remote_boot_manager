@@ -9,11 +9,12 @@ pytest-asyncio
 pytest-homeassistant-custom-component
 
 # misc dependencies for home assistant
-ha-ffmpeg
 aiodhcpwatcher
 aiousbwatcher
 async-upnp-client
-hassil
-PyTurboJPEG
 av
+ha-ffmpeg
+hassil
 home-assistant-frontend
+pymicro-vad==1.0.1
+PyTurboJPEG==1.8.3
