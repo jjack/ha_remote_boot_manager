@@ -154,6 +154,31 @@ async def test_switch_async_turn_off(hass):
         mock_task.call_args[0][0].close()
 
 
+async def test_switch_async_turn_off_cancels_task(hass):
+    """Test that turn off cancels an existing ping task."""
+    manager = MagicMock()
+    manager.servers = {
+        "00:11:22:33:44:55": RemoteServer(
+            mac="00:11:22:33:44:55",
+            name="Test Server",
+            host="192.168.1.100",
+        )
+    }
+    switch = RemoteBootManagerSwitch(hass, manager.servers["00:11:22:33:44:55"])
+    switch.hass = hass
+    switch.async_write_ha_state = MagicMock()
+
+    mock_task = MagicMock()
+    mock_task.done.return_value = False
+    switch._ping_task = mock_task
+
+    with patch.object(hass, "async_create_background_task") as mock_task_create:
+        await switch.async_turn_off()
+        mock_task.cancel.assert_called_once()
+        mock_task_create.assert_called_once()
+        mock_task_create.call_args[0][0].close()
+
+
 async def test_switch_async_ping_loop_success(hass):
     """Test the background ping loop resolving successfully."""
     manager = MagicMock()
