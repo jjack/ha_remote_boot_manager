@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from aiohttp import web
 
+from custom_components.remote_boot_manager.const import DEFAULT_NAME
 from custom_components.remote_boot_manager.webhook import async_validate_webhook_payload
 
 
@@ -85,3 +86,19 @@ async def test_validate_webhook_valid_payload():
     assert payload["host"] == "192.168.1.100"
     assert payload["broadcast_address"] == "192.168.1.255"
     assert payload["broadcast_port"] == 9
+
+
+async def test_validate_webhook_missing_name_uses_default():
+    """Test validation uses default name if not provided."""
+    request = MagicMock(spec=web.Request)
+    valid_data = {
+        "mac": "00:11:22:33:44:55",
+    }
+    request.text = AsyncMock(return_value='{"mac": "00:11:22:33:44:55"}')
+    request.json = AsyncMock(return_value=valid_data)
+
+    payload, response = await async_validate_webhook_payload(request)
+    assert response is None
+    assert payload is not None
+    assert payload["mac"] == "00:11:22:33:44:55"
+    assert payload["name"] == DEFAULT_NAME
