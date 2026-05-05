@@ -55,6 +55,21 @@ async def test_async_process_webhook_payload_new_server(manager, hass):
         mock_dispatch.assert_called_once()
 
 
+async def test_async_process_webhook_payload_none_option_already_present(manager, hass):
+    """Test that the default none boot option is not duplicated if already present."""
+    payload = {
+        "name": "test-server",
+        "host": "192.168.1.100",
+        "bootloader": "grub",
+        "boot_options": [DEFAULT_BOOT_OPTION_NONE, "ubuntu", "windows"],
+    }
+
+    manager.async_process_webhook_payload("00:11:22:33:44:55", payload)
+
+    server = manager.servers["00:11:22:33:44:55"]
+    assert server.boot_options == [DEFAULT_BOOT_OPTION_NONE, "ubuntu", "windows"]
+
+
 async def test_async_process_webhook_payload_update_existing_server(manager, hass):
     """Test that an existing server is updated correctly, including device registry rename."""
     # Setup existing server
@@ -133,6 +148,61 @@ async def test_async_load_no_data(manager, mock_store):
     mock_store.async_load.return_value = {"other_key": "other_value"}
     await manager.async_load()
     assert manager.servers == {}
+
+
+async def test_async_load_valid_data(manager, mock_store):
+    """Test loading valid server data from storage."""
+    mock_store.async_load.return_value = {
+        "servers": {
+            "00:11:22:33:44:55": {
+                "mac": "00:11:22:33:44:55",
+                "name": "Stored Server",
+                "host": "192.168.1.50",
+            }
+        }
+    }
+    await manager.async_load()
+
+    assert "00:11:22:33:44:55" in manager.servers
+    server = manager.servers["00:11:22:33:44:55"]
+    assert server.name == "Stored Server"
+    assert server.host == "192.168.1.50"
+
+
+async def test_async_load_invalid_data_format(manager, mock_store):
+    """Test loading invalid server data format logs a warning and skips it."""
+    mock_store.async_load.return_value = {
+        "servers": {"00:11:22:33:44:55": ["list", "instead", "of", "dict"]}
+    }
+
+    with patch(
+        "custom_components.remote_boot_manager.manager.LOGGER.warning"
+    ) as mock_warn:
+        await manager.async_load()
+
+    assert "00:11:22:33:44:55" not in manager.servers
+    mock_warn.assert_called_once()
+    assert "Discarding invalid server data" in mock_warn.call_args[0][0]
+
+
+async def test_async_load_filters_extra_keys(manager, mock_store):
+    """Test loading data with unknown keys correctly filters them out."""
+    mock_store.async_load.return_value = {
+        "servers": {
+            "00:11:22:33:44:55": {
+                "mac": "00:11:22:33:44:55",
+                "name": "Filtered Server",
+                "unknown_future_key": "some_value",
+            }
+        }
+    }
+
+    await manager.async_load()
+
+    assert "00:11:22:33:44:55" in manager.servers
+    server = manager.servers["00:11:22:33:44:55"]
+    assert server.name == "Filtered Server"
+    assert not hasattr(server, "unknown_future_key")
 
 
 async def test_async_purge_data(manager, mock_store):
