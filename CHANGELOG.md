@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/jjack/ha-remote-boot-manager/compare/v0.4.1...v0.4.3) (2026-05-06)
+
+
+### Miscellaneous Chores
+
+* force release ([b0c4f5b](https://github.com/jjack/ha-remote-boot-manager/commit/b0c4f5b630e633b2276cf04955cee37cc69451f4))
+
 ## [0.4.1](https://github.com/jjack/hass-remote-boot-manager/compare/v0.4.0...v0.4.1) (2026-05-06)
 
 
