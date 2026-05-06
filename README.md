@@ -4,7 +4,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/jjack/hass-remote-boot-manager)
 [![Python and Coverage](https://github.com/jjack/hass-remote-boot-manager/actions/workflows/test.yml/badge.svg)](https://github.com/jjack/hass-remote-boot-manager/actions/workflows/test.yml)
 [![CodeQL](https://github.com/jjack/hass-remote-boot-manager/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/jjack/hass-remote-boot-manager/actions/workflows/github-code-scanning/codeql)
-![Codecov branch](https://img.shields.io/codecov/c/github/jjack/hass-remote-boot-manager)
+[![Codecov branch](https://img.shields.io/codecov/c/github/jjack/hass-remote-boot-manager)](https://app.codecov.io/gh/jjack/hass-remote-boot-manager)
 
 Manage and automate the booting of your remote bare-metal hosts in Home Assistant.
 
