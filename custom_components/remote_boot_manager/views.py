@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import hmac
 import logging
 from http import HTTPStatus
 
@@ -79,12 +80,12 @@ class BootloaderView(HomeAssistantView):
         # consume the next boot option.
         try:
             token = request.query.get("token")
-            valid_token = entries[0].data.get("webhook_id")
+            valid_token = str(entries[0].data.get("webhook_id", ""))
 
             # Authenticated GET requests with a valid token intentionally mutate state
             # by "consuming" the boot option to prevent infinite boot loops.
             host_copy = dataclasses.asdict(host)
-            if token and token == valid_token:
+            if token and valid_token and hmac.compare_digest(token, valid_token):
                 host_copy["next_boot_option"] = manager.async_consume_next_boot_option(
                     mac_address
                 )
