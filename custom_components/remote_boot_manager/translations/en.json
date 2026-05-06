@@ -35,7 +35,7 @@
             },
             "host_config": {
                 "title": "Configure {host_name}",
-                "description": "Select a script to gracefully shut down the remote host. \n\n**Note:** You can also manually adjust the network addresses below for debugging purposes, but these will be automatically overwritten the next time the Remote Boot Agent checks in!",
+                "description": "Select a script to gracefully shut down the remote host. \n\n**Note:** You can also manually adjust the `address`, `broadcast_address`, and `broadcast_port` below for testing or troubleshooting purposes, but these changes are only temporary and will be automatically overwritten the next time the Remote Boot Agent checks in!",
                 "data": {
                     "turn_off_script": "Shutdown Script (Optional)",
                     "address": "Address for Ping Checks",

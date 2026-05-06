@@ -9,7 +9,7 @@
 Manage and automate the booting of your remote bare-metal hosts in Home Assistant.
 
 ## Features
-* **Dynamic OS Discovery**: Hosts automatically report their available OS list (e.g., Ubuntu, Windows) to Home Assistant.
+* **Dynamic OS Discovery**: Hosts automatically report their available OS list (e.g., Ubuntu, Windows) to Home Assistant. (requires `remote-boot-agent` to be installed on the host)
 * **Next Boot Selection**: Change the next boot OS via a dropdown `select` entity.
 * **Wake-on-LAN & Power Status**: Sends magic packets to wake hosts and tracks power state via ping.
 * **Bootloader Endpoint**: Exposes a smart endpoint for GRUB (or other bootloaders) to fetch the selected OS and automatically reset state to prevent boot loops.
@@ -44,19 +44,37 @@ This integration creates a new Home Assistant Device for each host discovered by
 
 For this integration to work, you must install a bare-metal GO agent on **every** target host you want to manage.
 
-**Agent Repository:** jjack/remote-boot-agent
-
 ### Basic Agent Setup:
-1. Download the [remote-boot-agent](https://github.com/jjack/hass-remote-boot-manager/releases/latest) package, binary, or source code.
+1. Download the latest [remote-boot-agent](https://github.com/jjack/remote-boot-agent/releases/latest).
 2. Install the agent on your target host.
-3. Configure the agent using your Home Assistant URL and the `webhook_id` you saved during the integration setup.
-4. Run the agent. It will automatically ping Home Assistant, and your host will instantly appear as a new Device!
+3. Run `remote-boot-agent setup` to auto-detect as much of the configurationa as possible (bootloader, initsystem, network info, etc.) and configure it with your bootloader and init system. This uses the `webhook_id` you saved during the integration setup.
+4. Run the agent manually with `remote-boot-agent options push`. It will automatically ping Home Assistant, and your host will instantly appear as a new Device!
 
 *(For detailed installation instructions, see the remote-boot-agent repository).*
+
+## Usage
+
+### Configuring Graceful Shutdowns
+By default, turning off a host's `switch` entity will only mark the host as "off" in Home Assistant. To execute a graceful shutdown, you can map a Home Assistant script to the host's turn-off action:
+1. Go to **Settings** -> **Devices & Services** and find the Remote Boot Manager integration.
+2. Click **Configure** on the integration card to open the options flow.
+3. Select your desired host.
+4. Choose a Home Assistant script to act as the `turn_off_script`. This script will be automatically triggered when you turn off the host's switch.
+
+### Regenerating the Webhook ID
+If you suspect your Webhook ID has been compromised, you can securely regenerate it:
+1. Go to **Settings** -> **Devices & Services** and find the Remote Boot Manager integration.
+2. Click the three dots (menu) on the integration card and select **Reconfigure**.
+3. Follow the prompts to generate a new Webhook ID.
+*(Note: Regenerating this ID will immediately break the connection with your existing agents until they are updated with the new ID.)*
+
+### API Endpoints
+This integration exposes two primary endpoints for managing remote hosts:
+* **Agent Webhook Endpoint** (`/api/webhook/{webhook_id}`): Used by the `remote-boot-agent` to securely push OS lists, network states, and metadata to Home Assistant.
+* **Bootloader Endpoint** (`/api/remote_boot_manager/bootloader/{mac_address}`): A smart endpoint queried by GRUB (or other bootloaders) at startup to determine the next boot option.
 
 ## Tips & Hints
 
 * **Testing Bootloaders**: The bootloader endpoint is read-only by default so you can safely test it. To actually consume the next boot option, append `?token=YOUR_WEBHOOK_ID` to the request URL.
 * **IP address or hostname changes**: If a host's IP address or hostname changes, the integration will attempt to update the Device Registry automatically. If you need to remove an old host, you can do so directly from the Home Assistant UI via the device page.
-* **Custom Broadcast Networks**: If your Home Assistant instance spans multiple VLANs or complex subnets, you can define custom broadcast IP addresses and ports to ensure magic packets reliably reach your hosts.
-* **Security Regeneration**: If you suspect your webhook ID is compromised, you can safely regenerate it via the  button (gear icon) on the integration card. This menu also allows you to temporarily override the Wake-on-LAN broadcast address and port for troubleshooting, though these settings will be overwritten by the agent on its next check-in.
+* **Testing Network Configurations**: You can manually adjust a host's `address`, `broadcast_address`, and `broadcast_port` via the **Configure** button (Options Flow). Note that these changes are temporary and will be automatically overwritten by the agent on its next check-in. They should only be used for testing or troubleshooting (e.g. if you are dealing with complex subnets or VLANs).
