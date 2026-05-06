@@ -6,6 +6,7 @@ from typing import Any
 
 from aiohttp import web
 
+from ..const import DEFAULT_BOOT_OPTION_NONE
 from . import BootloaderBase, register_bootloader
 
 
@@ -17,9 +18,11 @@ class GrubBootloader(BootloaderBase):
 
     def generate_boot_config(self, host: dict[str, Any]) -> web.Response:
         """Generate the GRUB boot configuration response."""
-        next_boot_option = host.get("next_boot_option", "(none)")
-        if next_boot_option != "(none)":
-            content = f"set default='{next_boot_option}'\n"
+        next_boot_option = host.get("next_boot_option", DEFAULT_BOOT_OPTION_NONE)
+        if next_boot_option != DEFAULT_BOOT_OPTION_NONE:
+            # Escape single quotes to prevent GRUB configuration injection
+            safe_option = next_boot_option.replace("'", "\\'")
+            content = f"set default='{safe_option}'\n"
         else:
             # returning nothing causes GRUB to fall back to its default behavior
             content = ""
