@@ -6,6 +6,7 @@ import pytest
 from aiohttp import web
 
 from custom_components.remote_boot_manager.bootloaders import (
+    _FAILED_BOOTLOADERS,
     BootloaderBase,
     async_get_bootloader,
 )
@@ -59,3 +60,24 @@ async def test_async_get_bootloader_not_registered(hass) -> None:
     ):
         bootloader = await async_get_bootloader(hass, "unregistered")
         assert bootloader is None
+
+
+async def test_async_get_bootloader_caches_failures(hass) -> None:
+    """Test that failed bootloader imports are cached to prevent repeated I/O."""
+    # Ensure it's not in the cache initially
+    _FAILED_BOOTLOADERS.discard("malicious_bootloader")
+
+    with patch(
+        "custom_components.remote_boot_manager.bootloaders._load_bootloader_module",
+        side_effect=ImportError,
+    ) as mock_load:
+        # First attempt should trigger a load attempt and fail
+        bootloader1 = await async_get_bootloader(hass, "malicious_bootloader")
+        assert bootloader1 is None
+        assert mock_load.call_count == 1
+        assert "malicious_bootloader" in _FAILED_BOOTLOADERS
+
+        # Second attempt should return None immediately without calling _load_bootloader_module
+        bootloader2 = await async_get_bootloader(hass, "malicious_bootloader")
+        assert bootloader2 is None
+        assert mock_load.call_count == 1  # Call count should not increase

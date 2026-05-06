@@ -24,6 +24,8 @@ class BootloaderBase:
 
 # This can be used to register bootloaders automatically
 _BOOTLOADERS: dict[str, type[BootloaderBase]] = {}
+# Cache failed imports to prevent I/O thread pool exhaustion from malicious requests
+_FAILED_BOOTLOADERS: set[str] = set()
 
 
 def register_bootloader(bootloader_cls: type[BootloaderBase]) -> type[BootloaderBase]:
@@ -39,12 +41,16 @@ def _load_bootloader_module(name: str) -> None:
 
 async def async_get_bootloader(hass: Any, name: str) -> BootloaderBase | None:
     """Get a bootloader instance by name."""
+    if name in _FAILED_BOOTLOADERS:
+        return None
+
     if name not in _BOOTLOADERS:
         try:
             # Dynamically importing modules performs blocking file I/O, so it must be
             # offloaded to an executor thread.
             await hass.async_add_executor_job(_load_bootloader_module, name)
         except ImportError:
+            _FAILED_BOOTLOADERS.add(name)
             LOGGER.exception("Failed to load bootloader %s", name)
             return None
 
