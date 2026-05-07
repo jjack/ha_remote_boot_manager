@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.4](https://github.com/jjack/ha-grub-os-selector/compare/v0.4.3...v0.4.4) (2026-05-07)
+
+
+### Bug Fixes
+
+* paranoid check you're not supposed to direct string compare tokens ([b8c3c64](https://github.com/jjack/ha-grub-os-selector/commit/b8c3c64f8f0c16ed0f7ff28baa9b060ef5bcbe27))
+* preventing possible executor exhaustion with spammy failed bootloaders ([9304f65](https://github.com/jjack/ha-grub-os-selector/commit/9304f65c63083a13b7397216bebfbb5115d2e73a))
+* preventing possible injection attacks with grub bootloader ([4653111](https://github.com/jjack/ha-grub-os-selector/commit/46531119a258b010f996a80a81325eea2c453668))
+* removing unnecessary temporary variable ([153dbd6](https://github.com/jjack/ha-grub-os-selector/commit/153dbd624bec421d80899e848fdde0a37f5f2c41))
+* using json.loads to be less strict in case someone forgets a "Content-Type: application/json" ([bc2b714](https://github.com/jjack/ha-grub-os-selector/commit/bc2b71491c7133d3c9956019dbfad1105ebb3c83))
+
 ## [0.4.3](https://github.com/jjack/ha-remote-boot-manager/compare/v0.4.1...v0.4.3) (2026-05-06)
 
 
