@@ -192,12 +192,9 @@ class GrubOSSelectManagerOptionsFlow(config_entries.OptionsFlow):
             host.off_action
             and isinstance(host.off_action, list)
             and len(host.off_action) > 0
+            and (action := host.off_action[0].get("action"))
         ):
-            action = host.off_action[0].get("action") or host.off_action[0].get(
-                "service"
-            )
-            if action:
-                default_script = action
+            default_script = action
 
         data_schema = {}
 
