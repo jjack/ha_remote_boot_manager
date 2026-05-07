@@ -48,10 +48,10 @@
                     "broadcast_address": "The IP address to send magic packets to. Defaults to `255.255.255.255` (`ff02::1` for ipv6) and is typically not changed.",
                     "broadcast_port": "The port to send magic packets to. Defaults to `9` and is typically not changed."
                 }
-            },
-            "error": {
-                "no_hosts": "No hosts found. Please make sure your Grub OS Reporter is properly configured and has checked in at least once before trying to configure options."
             }
+        },
+        "abort": {
+            "no_hosts": "No hosts found. Please make sure your Grub OS Reporter is properly configured and has checked in at least once before trying to configure options."
         }
     },
     "services": {
