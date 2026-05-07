@@ -9,4 +9,4 @@ homeassistant:
 logger:
   default: info
   logs:
-    custom_components.remote_boot_manager: debug
+    custom_components.grub_os_selector: debug

@@ -1,1 +1,1 @@
-"""Tests for the remote boot manager integration."""
+"""Tests for the Grub OS Selector integration."""

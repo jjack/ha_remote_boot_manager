@@ -7,11 +7,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.remote_boot_manager.config_flow import (
-    RemoteBootManagerOptionsFlow,
+from custom_components.grub_os_selector.config_flow import (
+    GrubOSSelectManagerOptionsFlow,
 )
-from custom_components.remote_boot_manager.const import DOMAIN
-from custom_components.remote_boot_manager.manager import RemoteHost
+from custom_components.grub_os_selector.const import DOMAIN
+from custom_components.grub_os_selector.manager import RemoteHost
 
 
 async def test_form(hass: HomeAssistant) -> None:
@@ -23,7 +23,7 @@ async def test_form(hass: HomeAssistant) -> None:
     assert result.get("errors") == {}
 
     with patch(
-        "custom_components.remote_boot_manager.config_flow.webhook.async_generate_url",
+        "custom_components.grub_os_selector.config_flow.webhook.async_generate_url",
         return_value="http://example.com/webhook",
     ):
         result2 = await hass.config_entries.flow.async_configure(
@@ -39,14 +39,14 @@ async def test_form(hass: HomeAssistant) -> None:
     )
 
     assert result3.get("type") == FlowResultType.CREATE_ENTRY
-    assert result3.get("title") == "Remote Boot Manager"
+    assert result3.get("title") == "Grub OS Selector"
     assert "webhook_id" in result3.get("data", {})
 
 
 async def test_form_missing_documentation(hass: HomeAssistant) -> None:
     """Test we abort if documentation is missing."""
     with patch(
-        "custom_components.remote_boot_manager.config_flow.async_get_loaded_integration"
+        "custom_components.grub_os_selector.config_flow.async_get_loaded_integration"
     ) as mock_get_integration:
         mock_integration = MagicMock()
         mock_integration.documentation = None
@@ -91,11 +91,11 @@ async def test_reconfigure_flow(hass: HomeAssistant) -> None:
 
     with (
         patch(
-            "custom_components.remote_boot_manager.config_flow.webhook.async_generate_id",
+            "custom_components.grub_os_selector.config_flow.webhook.async_generate_id",
             return_value="new_id",
         ),
         patch(
-            "custom_components.remote_boot_manager.config_flow.webhook.async_generate_url",
+            "custom_components.grub_os_selector.config_flow.webhook.async_generate_url",
             return_value="http://example.com/new_webhook",
         ),
     ):
@@ -222,7 +222,7 @@ async def test_options_flow_host_config_no_mac(hass: HomeAssistant) -> None:
     entry.runtime_data = MagicMock()
     entry.add_to_hass(hass)
 
-    flow = RemoteBootManagerOptionsFlow(entry)
+    flow = GrubOSSelectManagerOptionsFlow(entry)
     flow.hass = hass
 
     result = await flow.async_step_host_config()

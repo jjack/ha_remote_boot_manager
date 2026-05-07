@@ -1,16 +1,16 @@
-"""Tests for remote_boot_manager __init__.py."""
+"""Tests for grub_os_selector __init__.py."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.remote_boot_manager import (
+from custom_components.grub_os_selector import (
     async_reload_entry,
     async_remove_config_entry_device,
     async_remove_entry,
     async_setup_entry,
 )
-from custom_components.remote_boot_manager.const import DOMAIN
+from custom_components.grub_os_selector.const import DOMAIN
 
 
 async def test_async_remove_entry_with_runtime_data(hass):
@@ -30,7 +30,7 @@ async def test_async_remove_entry_without_runtime_data(hass):
     mock_entry = MagicMock()
     del mock_entry.runtime_data  # Ensure hasattr returns False
 
-    with patch("custom_components.remote_boot_manager.Store") as mock_store_class:
+    with patch("custom_components.grub_os_selector.Store") as mock_store_class:
         mock_store_instance = AsyncMock()
         mock_store_class.return_value = mock_store_instance
 
@@ -91,7 +91,7 @@ async def test_async_setup_entry(hass):
 
     with (
         patch(
-            "custom_components.remote_boot_manager.manager.RemoteBootManager.async_load"
+            "custom_components.grub_os_selector.manager.GrubOSSelectManager.async_load"
         ),
         patch("homeassistant.components.webhook.async_register") as mock_register,
         patch.object(hass.config_entries, "async_forward_entry_setups"),

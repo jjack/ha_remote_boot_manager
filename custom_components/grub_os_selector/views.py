@@ -1,4 +1,4 @@
-"""Views for the remote_boot_manager custom component."""
+"""Views for the grub_os_selector custom component."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""DataUpdateCoordinator for remote_boot_manager."""
+"""DataUpdateCoordinator for grub_os_selector."""
 
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ class RemoteHost:
         self.broadcast_port = payload.get(CONF_BROADCAST_PORT, self.broadcast_port)
 
 
-class RemoteBootManager:
+class GrubOSSelectManager:
     """Class to manage remote boot options."""
 
     def __init__(self, hass: HomeAssistant) -> None:
@@ -116,7 +116,7 @@ class RemoteBootManager:
     def async_process_webhook_payload(
         self, mac_address: str, payload: dict[str, Any]
     ) -> None:
-        """Process payloads from the bare-metal GO agents."""
+        """Process payloads from the bare-metal GO grub os reporters."""
         mac_address = format_mac(mac_address)
 
         is_new_host = mac_address not in self.hosts

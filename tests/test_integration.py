@@ -1,4 +1,4 @@
-"""Test integration for remote_boot_manager."""
+"""Test integration for grub_os_selector."""
 
 from http import HTTPStatus
 from unittest.mock import patch
@@ -10,7 +10,7 @@ from homeassistant.helpers.entity_registry import async_get as async_get_er
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.remote_boot_manager.const import DEFAULT_BOOT_OPTION_NONE, DOMAIN
+from custom_components.grub_os_selector.const import DEFAULT_BOOT_OPTION_NONE, DOMAIN
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def mock_config_entry():
     """Mock config entry."""
     return MockConfigEntry(
         domain=DOMAIN,
-        title="Remote Boot Manager",
+        title="Grub OS Selector",
         data={"webhook_id": "test_webhook_id"},
     )
 
@@ -114,7 +114,7 @@ async def test_minimal_webhook_discovery_and_switch(
 
     # Verify the switch works by calling turn_on
     with patch(
-        "custom_components.remote_boot_manager.switch.wakeonlan.send_magic_packet"
+        "custom_components.grub_os_selector.switch.wakeonlan.send_magic_packet"
     ) as mock_wake:
         await hass.services.async_call(
             "switch", "turn_on", {"entity_id": entity_id_switch}, blocking=True
@@ -141,7 +141,7 @@ async def test_select_and_grub_config_view(
     assert state is not None
     assert state.state == "ubuntu"
 
-    resp = await client.get("/api/remote_boot_manager/aa:bb:cc:dd:ee:ff")
+    resp = await client.get("/api/grub_os_selector/aa:bb:cc:dd:ee:ff")
     assert resp.status == HTTPStatus.OK
     text = await resp.text()
     assert "set default='ubuntu'" in text
@@ -167,7 +167,7 @@ async def test_switch_turn_on_does_not_reset_boot_option(
 
     # Next, turn on the switch
     with patch(
-        "custom_components.remote_boot_manager.switch.wakeonlan.send_magic_packet"
+        "custom_components.grub_os_selector.switch.wakeonlan.send_magic_packet"
     ) as mock_wake:
         await hass.services.async_call(
             "switch",
@@ -211,7 +211,7 @@ async def test_global_send_magic_packet_service(
 ) -> None:
     """Test that the global send_magic_packet service works."""
     with patch(
-        "custom_components.remote_boot_manager.wakeonlan.send_magic_packet"
+        "custom_components.grub_os_selector.wakeonlan.send_magic_packet"
     ) as mock_wake:
         await hass.services.async_call(
             DOMAIN,
@@ -248,7 +248,7 @@ async def test_webhook_unexpected_empty_payload(
     webhook_url = "/api/webhook/test_webhook_id"
 
     with patch(
-        "custom_components.remote_boot_manager.async_validate_webhook_payload",
+        "custom_components.grub_os_selector.async_validate_webhook_payload",
         return_value=(None, None),
     ):
         resp = await client.post(webhook_url, data="dummy")
@@ -265,7 +265,7 @@ async def test_webhook_missing_mac_address(
     webhook_url = "/api/webhook/test_webhook_id"
 
     with patch(
-        "custom_components.remote_boot_manager.async_validate_webhook_payload",
+        "custom_components.grub_os_selector.async_validate_webhook_payload",
         return_value=({"address": "test.local", "name": "test-server"}, None),
     ):
         resp = await client.post(webhook_url, data="dummy")
@@ -288,7 +288,7 @@ async def test_webhook_internal_server_error(
     }
 
     with patch(
-        "custom_components.remote_boot_manager.manager.RemoteBootManager.async_process_webhook_payload",
+        "custom_components.grub_os_selector.manager.GrubOSSelectManager.async_process_webhook_payload",
         side_effect=Exception("Boom"),
     ):
         resp = await client.post(webhook_url, json=payload)

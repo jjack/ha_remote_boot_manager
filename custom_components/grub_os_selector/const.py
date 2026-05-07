@@ -1,4 +1,4 @@
-"""Constants for remote_boot_manager."""
+"""Constants for grub_os_selector."""
 
 from logging import Logger, getLogger
 
@@ -7,18 +7,18 @@ LOGGER: Logger = getLogger(__package__)
 CONF_BOOT_OPTIONS = "boot_options"
 CONF_TURN_OFF = "turn_off"
 
-DEFAULT_NAME = "Remote Boot Manager"
+DEFAULT_NAME = "Grub OS Selector"
 
-DOMAIN = "remote_boot_manager"
+DOMAIN = "grub_os_selector"
 DOMAIN_DATA = f"{DOMAIN}.hosts"
 
 DEFAULT_BOOT_OPTION_NONE = "(none)"
 
-WEBHOOK_NAME = "Remote Boot Manager Ingest"
+WEBHOOK_NAME = "Grub OS Selector Ingest"
 WEBHOOK_MAX_PAYLOAD_BYTES = 102400  # 100 KB limit
 
-BOOT_AGENT_URL = "https://github.com/jjack/remote-boot-agent"
-GRUB_VIEW_URL = "/api/remote_boot_manager/{mac_address}"
+GRUB_OS_REPORTER_URL = "https://github.com/jjack/grub-os-reporter"
+GRUB_VIEW_URL = "/api/grub_os_selector/{mac_address}"
 
 SAVE_DELAY = 15.0  # seconds to debounce saving to storage after changes
 

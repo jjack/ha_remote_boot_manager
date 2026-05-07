@@ -1,8 +1,8 @@
 """
-Custom integration to integrate remote_boot_manager with Home Assistant.
+Custom integration to integrate grub_os_selector with Home Assistant.
 
 For more details about this integration, please refer to
-https://github.com/jjack/hass-remote-boot-manager
+https://github.com/jjack/ha-grub-os-selector
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from homeassistant.const import (
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, LOGGER, WEBHOOK_NAME
-from .manager import RemoteBootManager
+from .manager import GrubOSSelectManager
 from .views import GrubConfigView
 from .webhook import async_validate_webhook_payload
 
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant, ServiceCall
     from homeassistant.helpers.device_registry import DeviceEntry
 
-    from .data import RemoteBootManagerConfigEntry
+    from .data import GrubOSSelectManagerConfigEntry
 
 SERVICE_SEND_MAGIC_PACKET = "send_magic_packet"
 
@@ -55,7 +55,7 @@ PLATFORMS: list[Platform] = [
 
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:  # noqa: ARG001
-    """Set up the remote_boot_manager component."""
+    """Set up the grub_os_selector component."""
 
     async def send_magic_packet(call: ServiceCall) -> None:
         """Send magic packet to wake up a device."""
@@ -83,7 +83,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:  # n
     )
 
     # Register the unauthenticated GRUB get request view
-    # (ie - GET /api/remote_boot_manager/{mac_address})   # noqa: ERA001
+    # (ie - GET /api/grub_os_selector/{mac_address})   # noqa: ERA001
     hass.http.register_view(GrubConfigView())
 
     return True
@@ -91,10 +91,10 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:  # n
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: RemoteBootManagerConfigEntry,
+    entry: GrubOSSelectManagerConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
-    manager = RemoteBootManager(hass)
+    manager = GrubOSSelectManager(hass)
     await manager.async_load()
     entry.runtime_data = manager
 
@@ -147,7 +147,7 @@ async def async_setup_entry(
 
 async def async_unload_entry(
     hass: HomeAssistant,
-    entry: RemoteBootManagerConfigEntry,
+    entry: GrubOSSelectManagerConfigEntry,
 ) -> bool:
     """Handle removal of an entry."""
     webhook_id = entry.data.get("webhook_id")
@@ -158,7 +158,7 @@ async def async_unload_entry(
 
 async def async_reload_entry(
     hass: HomeAssistant,
-    entry: RemoteBootManagerConfigEntry,
+    entry: GrubOSSelectManagerConfigEntry,
 ) -> None:
     """Reload config entry."""
     await hass.config_entries.async_reload(entry.entry_id)
@@ -166,7 +166,7 @@ async def async_reload_entry(
 
 async def async_remove_entry(
     hass: HomeAssistant,
-    entry: RemoteBootManagerConfigEntry,
+    entry: GrubOSSelectManagerConfigEntry,
 ) -> None:
     """Handle removal of an entry."""
     # Since async_unload_entry unregisters the webhook and Home Assistant automatically
@@ -180,7 +180,7 @@ async def async_remove_entry(
 
 async def async_remove_config_entry_device(
     hass: HomeAssistant,  # noqa: ARG001
-    config_entry: RemoteBootManagerConfigEntry,
+    config_entry: GrubOSSelectManagerConfigEntry,
     device_entry: DeviceEntry,
 ) -> bool:
     """Remove a device from a config entry and clean up manager data."""

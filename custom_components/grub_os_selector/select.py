@@ -1,4 +1,4 @@
-"""Select platform for Remote Boot Manager."""
+"""Select platform for Grub OS Selector."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-    from .manager import RemoteBootManager
+    from .manager import GrubOSSelectManager
 
 
 async def async_setup_entry(
@@ -34,7 +34,7 @@ async def async_setup_entry(
     def async_add_host_select(mac_address: str) -> None:
         """Add a select entity for a newly discovered host."""
         LOGGER.debug("Adding select entity for %s", mac_address)
-        async_add_entities([RemoteBootManagerSelect(manager, mac_address)])
+        async_add_entities([GrubOSSelectManagerSelect(manager, mac_address)])
 
     # Add entities for hosts that already exist in the manager
     for mac in manager.hosts:
@@ -46,10 +46,10 @@ async def async_setup_entry(
     )
 
 
-class RemoteBootManagerSelect(SelectEntity):
-    """remote_boot_manager select class."""
+class GrubOSSelectManagerSelect(SelectEntity):
+    """grub_os_selector select class."""
 
-    def __init__(self, manager: RemoteBootManager, mac_address: str) -> None:
+    def __init__(self, manager: GrubOSSelectManager, mac_address: str) -> None:
         """Initialize the select entity."""
         self.manager = manager
         self.mac_address = mac_address
@@ -76,7 +76,7 @@ class RemoteBootManagerSelect(SelectEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, mac_address)},
             name=host_data.name,
-            manufacturer="Remote Boot Manager",
+            manufacturer="Grub OS Selector",
             model=model_name,
             connections={(CONNECTION_NETWORK_MAC, mac_address)},
         )

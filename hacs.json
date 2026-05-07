@@ -1,7 +1,7 @@
 {
-    "name": "Remote Boot Manager",
+    "name": "Grub OS Selector",
     "zip_release": true,
-    "filename": "remote_boot_manager.zip",
+    "filename": "grub_os_selector.zip",
     "homeassistant": "2026.3.0",
     "hide_default_branch": true
 }

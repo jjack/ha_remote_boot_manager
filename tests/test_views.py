@@ -1,4 +1,4 @@
-"""Test views for remote_boot_manager."""
+"""Test views for grub_os_selector."""
 
 from http import HTTPStatus
 from unittest.mock import MagicMock, patch
@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 from aiohttp import web
 from homeassistant.core import HomeAssistant
 
-from custom_components.remote_boot_manager.manager import RemoteHost
-from custom_components.remote_boot_manager.views import GrubConfigView
+from custom_components.grub_os_selector.manager import RemoteHost
+from custom_components.grub_os_selector.views import GrubConfigView
 
 
 async def test_grub_config_view_invalid_mac(hass: HomeAssistant) -> None:
@@ -16,7 +16,7 @@ async def test_grub_config_view_invalid_mac(hass: HomeAssistant) -> None:
     mock_request = MagicMock(spec=web.Request)
     mock_request.app = {"hass": hass}
     with patch(
-        "custom_components.remote_boot_manager.views.format_mac", return_value=None
+        "custom_components.grub_os_selector.views.format_mac", return_value=None
     ):
         resp = await view.get(mock_request, "invalid")
         assert resp.status == HTTPStatus.BAD_REQUEST

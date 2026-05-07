@@ -1,4 +1,4 @@
-"""Switch platform for Remote Boot Manager."""
+"""Switch platform for Grub OS Selector."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-    from .data import RemoteBootManagerConfigEntry
+    from .data import GrubOSSelectManagerConfigEntry
     from .manager import RemoteHost
 
 
@@ -43,8 +43,8 @@ async def _async_ping_host(host: str) -> bool:
         return result.is_alive
 
 
-class RemoteBootManagerSwitch(SwitchEntity):
-    """Remote Boot Manager switch class."""
+class GrubOSSelectManagerSwitch(SwitchEntity):
+    """Grub OS Selector switch class."""
 
     def __init__(
         self,
@@ -74,15 +74,13 @@ class RemoteBootManagerSwitch(SwitchEntity):
             broadcast_info.append(f"Port: {b_port}")
 
         model_name = (
-            f"({', '.join(broadcast_info)})"
-            if broadcast_info
-            else "Remote Boot Manager"
+            f"({', '.join(broadcast_info)})" if broadcast_info else "Grub OS Selector"
         )
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self.host.mac)},
             name=self.host.name,
-            manufacturer="Remote Boot Manager",
+            manufacturer="Grub OS Selector",
             model=model_name,
             connections={(CONNECTION_NETWORK_MAC, self.host.mac)},
         )
@@ -191,7 +189,7 @@ class RemoteBootManagerSwitch(SwitchEntity):
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: RemoteBootManagerConfigEntry,
+    entry: GrubOSSelectManagerConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the switch platform from a config entry."""
@@ -201,7 +199,7 @@ async def async_setup_entry(
     def async_add_host_switch(mac_address: str) -> None:
         """Add a switch entity for a newly discovered host."""
         host = manager.hosts[mac_address]
-        async_add_entities([RemoteBootManagerSwitch(hass, host)])
+        async_add_entities([GrubOSSelectManagerSwitch(hass, host)])
 
     # Add entities for hosts that already exist in the manager
     for mac in manager.hosts:

@@ -1,4 +1,4 @@
-"""Adds config flow for RemoteBootManager."""
+"""Adds config flow for GrubOSSelectManager."""
 
 from __future__ import annotations
 
@@ -16,11 +16,11 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.loader import async_get_loaded_integration
 
-from .const import BOOT_AGENT_URL, DOMAIN
+from .const import DOMAIN, GRUB_OS_REPORTER_URL
 
 
-class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for RemoteBootManager."""
+class GrubOSSelectManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
+    """Config flow for GrubOSSelectManager."""
 
     VERSION = 1
 
@@ -34,7 +34,7 @@ class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Get the options flow for this handler."""
-        return RemoteBootManagerOptionsFlow(config_entry)
+        return GrubOSSelectManagerOptionsFlow(config_entry)
 
     async def async_step_user(
         self,
@@ -70,7 +70,7 @@ class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Show the generated webhook ID to the user."""
         if user_input is not None:
             return self.async_create_entry(
-                title="Remote Boot Manager", data={"webhook_id": self._webhook_id}
+                title="Grub OS Selector", data={"webhook_id": self._webhook_id}
             )
 
         webhook_url = webhook.async_generate_url(self.hass, self._webhook_id)
@@ -80,7 +80,7 @@ class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={
                 "webhook_id": self._webhook_id,
                 "webhook_url": webhook_url,
-                "agent_url": BOOT_AGENT_URL,
+                "reporter_url": GRUB_OS_REPORTER_URL,
             },
         )
 
@@ -118,13 +118,13 @@ class RemoteBootManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={
                 "webhook_id": self._webhook_id,
                 "webhook_url": webhook_url,
-                "agent_url": BOOT_AGENT_URL,
+                "reporter_url": GRUB_OS_REPORTER_URL,
             },
         )
 
 
-class RemoteBootManagerOptionsFlow(config_entries.OptionsFlow):
-    """Options flow for Remote Boot Manager."""
+class GrubOSSelectManagerOptionsFlow(config_entries.OptionsFlow):
+    """Options flow for Grub OS Selector."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
@@ -208,8 +208,8 @@ class RemoteBootManagerOptionsFlow(config_entries.OptionsFlow):
                 selector.EntitySelectorConfig(domain="script")
             )
 
-        # Address values can be edited here for debugging but will be overwritten by
-        # the next agent webhook.
+        # Address values can be edited here for debugging but will be overwritten the
+        # next time the reporter checks in.
         data_schema[
             vol.Optional(CONF_ADDRESS, description={"suggested_value": host.address})
             if host.address is not None

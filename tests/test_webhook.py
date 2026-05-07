@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from aiohttp import web
 
-from custom_components.remote_boot_manager.webhook import async_validate_webhook_payload
+from custom_components.grub_os_selector.webhook import async_validate_webhook_payload
 
 
 async def test_validate_webhook_empty_body():

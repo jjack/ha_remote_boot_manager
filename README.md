@@ -1,15 +1,15 @@
-# Remote Boot Manager for Home Assistant
+# Grub OS Selector for Home Assistant
 
-![GitHub](https://img.shields.io/github/license/jjack/hass-remote-boot-manager)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/jjack/hass-remote-boot-manager)
-[![Python and Coverage](https://github.com/jjack/hass-remote-boot-manager/actions/workflows/test.yml/badge.svg)](https://github.com/jjack/hass-remote-boot-manager/actions/workflows/test.yml)
-[![CodeQL](https://github.com/jjack/hass-remote-boot-manager/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/jjack/hass-remote-boot-manager/actions/workflows/github-code-scanning/codeql)
-[![Codecov branch](https://img.shields.io/codecov/c/github/jjack/hass-remote-boot-manager)](https://app.codecov.io/gh/jjack/hass-remote-boot-manager)
+![GitHub](https://img.shields.io/github/license/jjack/hass-grub-os-selector)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/jjack/hass-grub-os-selector)
+[![Python and Coverage](https://github.com/jjack/hass-grub-os-selector/actions/workflows/test.yml/badge.svg)](https://github.com/jjack/hass-grub-os-selector/actions/workflows/test.yml)
+[![CodeQL](https://github.com/jjack/hass-grub-os-selector/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/jjack/hass-grub-os-selector/actions/workflows/github-code-scanning/codeql)
+[![Codecov branch](https://img.shields.io/codecov/c/github/jjack/hass-grub-os-selector)](https://app.codecov.io/gh/jjack/hass-grub-os-selector)
 
 Manage and automate the booting of your remote bare-metal hosts in Home Assistant.
 
 ## Features
-* **Dynamic OS Discovery**: Hosts automatically report their available OS list (e.g., Ubuntu, Windows) to Home Assistant. (requires `remote-boot-agent` to be installed on the host)
+* **Dynamic OS Discovery**: Hosts automatically report their available OS list (e.g., Ubuntu, Windows) to Home Assistant. (requires `grub-os-reporter` to be installed on the host)
 * **Next Boot Selection**: Change the next boot OS via a dropdown `select` entity.
 * **Wake-on-LAN & Power Status**: Sends magic packets to wake hosts and tracks power state via ping.
 * **GRUB Endpoint**: Exposes a smart endpoint for GRUB to fetch the selected OS and automatically reset state to prevent boot loops.
@@ -27,17 +27,17 @@ This integration creates a new Home Assistant Device for each host discovered by
 1. Open HACS in Home Assistant.
 2. Go to **Integrations**.
 3. Click the 3 dots in the top right -> **Custom repositories**.
-4. Add `jjack/hass-remote-boot-manager` as an Integration.
+4. Add `jjack/hass-grub-os-selector` as an Integration.
 5. Download it and restart Home Assistant.
 
 ### Manual Installation
-1. Copy the `custom_components/remote_boot_manager` directory to your Home Assistant `custom_components` directory.
+1. Copy the `custom_components/grub_os_selector` directory to your Home Assistant `custom_components` directory.
 2. Restart Home Assistant.
 
 ## Configuration & Setup
 
 1. Go to **Settings** -> **Devices & Services** in Home Assistant.
-2. Click **+ Add Integration** and search for "Remote Boot Manager".
+2. Click **+ Add Integration** and search for "Grub OS Selector".
 3. **IMPORTANT:** During setup, Home Assistant will generate a unique, secure `webhook_id`. **You must copy and save this ID and the example configuration!** It is only shown to you once for security reasons. You will need it to configure your remote hosts.
 
 ## Remote Boot Agent (Client Setup)
@@ -45,33 +45,33 @@ This integration creates a new Home Assistant Device for each host discovered by
 For this integration to work, you must install a bare-metal GO agent on **every** target host you want to manage.
 
 ### Basic Agent Setup:
-1. Download the latest [remote-boot-agent](https://github.com/jjack/remote-boot-agent/releases/latest).
+1. Download the latest [grub-os-reporter](https://github.com/jjack/grub-os-reporter/releases/latest).
 2. Install the agent on your target host.
-3. Run `remote-boot-agent setup` to auto-detect as much of the configuration as possible (GRUB, init system, network info, etc.) and configure it with GRUB and your init system. This uses the `webhook_id` you saved during the integration setup.
-4. Run the agent manually with `remote-boot-agent options push`. It will automatically ping Home Assistant, and your host will instantly appear as a new Device!
+3. Run `grub-os-reporter setup` to auto-detect as much of the configuration as possible (GRUB, init system, network info, etc.) and configure it with GRUB and your init system. This uses the `webhook_id` you saved during the integration setup.
+4. Run the agent manually with `grub-os-reporter options push`. It will automatically ping Home Assistant, and your host will instantly appear as a new Device!
 
-*(For detailed installation instructions, see the remote-boot-agent repository).*
+*(For detailed installation instructions, see the grub-os-reporter repository).*
 
 ## Usage
 
 ### Configuring Graceful Shutdowns
 By default, turning off a host's `switch` entity will only mark the host as "off" in Home Assistant. To execute a graceful shutdown, you can map a Home Assistant script to the host's turn-off action:
-1. Go to **Settings** -> **Devices & Services** and find the Remote Boot Manager integration.
+1. Go to **Settings** -> **Devices & Services** and find the Grub OS Selector integration.
 2. Click **Configure** on the integration card to open the options flow.
 3. Select your desired host.
 4. Choose a Home Assistant script to act as the `turn_off_script`. This script will be automatically triggered when you turn off the host's switch.
 
 ### Regenerating the Webhook ID
 If you suspect your Webhook ID has been compromised, you can securely regenerate it:
-1. Go to **Settings** -> **Devices & Services** and find the Remote Boot Manager integration.
+1. Go to **Settings** -> **Devices & Services** and find the Grub OS Selector integration.
 2. Click the three dots (menu) on the integration card and select **Reconfigure**.
 3. Follow the prompts to generate a new Webhook ID.
 *(Note: Regenerating this ID will immediately break the connection with your existing agents until they are updated with the new ID.)*
 
 ### API Endpoints
 This integration exposes two primary endpoints for managing remote hosts:
-* **Agent Webhook Endpoint** (`/api/webhook/{webhook_id}`): Used by the `remote-boot-agent` to securely push OS lists, network states, and metadata to Home Assistant.
-* **GRUB Endpoint** (`/api/remote_boot_manager/{mac_address}`): A smart endpoint queried by GRUB at startup to determine the next boot option.
+* **Agent Webhook Endpoint** (`/api/webhook/{webhook_id}`): Used by the `grub-os-reporter` to securely push OS lists, network states, and metadata to Home Assistant.
+* **GRUB Endpoint** (`/api/grub_os_selector/{mac_address}`): A smart endpoint queried by GRUB at startup to determine the next boot option.
 
 ## Tips & Hints
 

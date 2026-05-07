@@ -1,11 +1,11 @@
-"""Tests for Remote Boot Manager switch."""
+"""Tests for Grub OS Selector switch."""
 
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from custom_components.remote_boot_manager.manager import RemoteHost
-from custom_components.remote_boot_manager.switch import (
-    RemoteBootManagerSwitch,
+from custom_components.grub_os_selector.manager import RemoteHost
+from custom_components.grub_os_selector.switch import (
+    GrubOSSelectManagerSwitch,
     _async_ping_host,
     async_setup_entry,
 )
@@ -16,7 +16,7 @@ async def test_async_ping_host_alive():
     mock_result = MagicMock()
     mock_result.is_alive = True
     with patch(
-        "custom_components.remote_boot_manager.switch.async_ping",
+        "custom_components.grub_os_selector.switch.async_ping",
         return_value=mock_result,
     ):
         assert await _async_ping_host("192.168.1.10") is True
@@ -25,7 +25,7 @@ async def test_async_ping_host_alive():
 async def test_async_ping_host_dead():
     """Test the async ping command when host is dead or throws an error."""
     with patch(
-        "custom_components.remote_boot_manager.switch.async_ping",
+        "custom_components.grub_os_selector.switch.async_ping",
         side_effect=Exception("Boom"),
     ):
         assert await _async_ping_host("192.168.1.10") is False
@@ -41,13 +41,13 @@ async def test_switch_async_turn_on_starts_task(hass):
             address="test.local",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
     switch.async_write_ha_state = MagicMock()
 
     with (
         patch(
-            "custom_components.remote_boot_manager.switch.wakeonlan.send_magic_packet"
+            "custom_components.grub_os_selector.switch.wakeonlan.send_magic_packet"
         ) as mock_send,
         patch.object(hass, "async_create_background_task") as mock_task,
     ):
@@ -73,13 +73,13 @@ async def test_switch_no_address_no_poll(hass):
             address="",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
 
     assert switch.should_poll is False
 
     with patch(
-        "custom_components.remote_boot_manager.switch._async_ping_host"
+        "custom_components.grub_os_selector.switch._async_ping_host"
     ) as mock_ping:
         await switch.async_update()
         mock_ping.assert_not_called()
@@ -97,7 +97,7 @@ async def test_switch_async_turn_on_with_broadcast_and_cancels_task(hass):
             broadcast_port=9,
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
     switch.async_write_ha_state = MagicMock()
 
@@ -108,7 +108,7 @@ async def test_switch_async_turn_on_with_broadcast_and_cancels_task(hass):
 
     with (
         patch(
-            "custom_components.remote_boot_manager.switch.wakeonlan.send_magic_packet"
+            "custom_components.grub_os_selector.switch.wakeonlan.send_magic_packet"
         ) as mock_send,
         patch.object(hass, "async_create_background_task") as mock_create_task,
     ):
@@ -137,7 +137,7 @@ async def test_switch_async_turn_off(hass):
             address="test.local",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
     switch.async_write_ha_state = MagicMock()
     switch._attr_is_on = True
@@ -165,7 +165,7 @@ async def test_switch_async_turn_off_cancels_task(hass):
             address="test.local",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
     switch.async_write_ha_state = MagicMock()
 
@@ -190,7 +190,7 @@ async def test_switch_async_ping_loop_success(hass):
             address="test.local",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
     switch.async_write_ha_state = MagicMock()
     switch._attr_is_on = True
@@ -198,7 +198,7 @@ async def test_switch_async_ping_loop_success(hass):
     with (
         patch("asyncio.sleep"),
         patch(
-            "custom_components.remote_boot_manager.switch._async_ping_host",
+            "custom_components.grub_os_selector.switch._async_ping_host",
             side_effect=[False, True],
         ) as mock_ping,
     ):
@@ -218,7 +218,7 @@ async def test_switch_async_ping_loop_timeout(hass):
             address="test.local",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
     switch.async_write_ha_state = MagicMock()
     switch._attr_is_on = True
@@ -226,7 +226,7 @@ async def test_switch_async_ping_loop_timeout(hass):
     with (
         patch("asyncio.sleep"),
         patch(
-            "custom_components.remote_boot_manager.switch._async_ping_host",
+            "custom_components.grub_os_selector.switch._async_ping_host",
             return_value=False,
         ) as mock_ping,
     ):
@@ -246,7 +246,7 @@ async def test_switch_async_ping_loop_off_success(hass):
             address="test.local",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
     switch.async_write_ha_state = MagicMock()
     switch._attr_is_on = False
@@ -254,7 +254,7 @@ async def test_switch_async_ping_loop_off_success(hass):
     with (
         patch("asyncio.sleep"),
         patch(
-            "custom_components.remote_boot_manager.switch._async_ping_host",
+            "custom_components.grub_os_selector.switch._async_ping_host",
             side_effect=[True, False],
         ) as mock_ping,
     ):
@@ -274,7 +274,7 @@ async def test_switch_async_ping_loop_off_timeout(hass):
             address="test.local",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
     switch.async_write_ha_state = MagicMock()
     switch._attr_is_on = False
@@ -282,7 +282,7 @@ async def test_switch_async_ping_loop_off_timeout(hass):
     with (
         patch("asyncio.sleep"),
         patch(
-            "custom_components.remote_boot_manager.switch._async_ping_host",
+            "custom_components.grub_os_selector.switch._async_ping_host",
             return_value=True,
         ) as mock_ping,
     ):
@@ -318,7 +318,7 @@ async def test_async_setup_entry(hass):
     async_add_entities = MagicMock()
 
     with patch(
-        "custom_components.remote_boot_manager.switch.async_dispatcher_connect"
+        "custom_components.grub_os_selector.switch.async_dispatcher_connect"
     ) as mock_connect:
         await async_setup_entry(hass, mock_entry, async_add_entities)
 
@@ -348,7 +348,7 @@ async def test_async_update_skips_when_ping_task_active(hass):
         name="Test Host",
         address="test.local",
     )
-    switch = RemoteBootManagerSwitch(hass, host)
+    switch = GrubOSSelectManagerSwitch(hass, host)
 
     # Mock an active ping task
     mock_task = MagicMock()
@@ -356,7 +356,7 @@ async def test_async_update_skips_when_ping_task_active(hass):
     switch._ping_task = mock_task
 
     with patch(
-        "custom_components.remote_boot_manager.switch._async_ping_host"
+        "custom_components.grub_os_selector.switch._async_ping_host"
     ) as mock_ping:
         await switch.async_update()
         # Polling should be skipped
@@ -370,10 +370,10 @@ async def test_async_update_polls_when_no_active_task(hass):
         name="Test Host",
         address="test.local",
     )
-    switch = RemoteBootManagerSwitch(hass, host)
+    switch = GrubOSSelectManagerSwitch(hass, host)
 
     with patch(
-        "custom_components.remote_boot_manager.switch._async_ping_host",
+        "custom_components.grub_os_selector.switch._async_ping_host",
         return_value=True,
     ) as mock_ping:
         # Test when _ping_task is None
@@ -383,7 +383,7 @@ async def test_async_update_polls_when_no_active_task(hass):
         assert switch._attr_is_on is True
 
     with patch(
-        "custom_components.remote_boot_manager.switch._async_ping_host",
+        "custom_components.grub_os_selector.switch._async_ping_host",
         return_value=False,
     ) as mock_ping:
         # Test when _ping_task is done
@@ -406,7 +406,7 @@ async def test_switch_will_remove_from_hass_cancels_task(hass):
             address="test.local",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
 
     mock_task = MagicMock()
@@ -428,7 +428,7 @@ async def test_switch_will_remove_from_hass_ignores_done_task(hass):
             address="test.local",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
 
     mock_task = MagicMock()
@@ -450,7 +450,7 @@ async def test_switch_async_ping_loop_cancelled_initial_sleep(hass):
             address="test.local",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
     switch.async_write_ha_state = MagicMock()
 
@@ -471,14 +471,14 @@ async def test_switch_async_ping_loop_cancelled_inner_sleep(hass):
             address="test.local",
         )
     }
-    switch = RemoteBootManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
+    switch = GrubOSSelectManagerSwitch(hass, manager.hosts["00:11:22:33:44:55"])
     switch.hass = hass
     switch.async_write_ha_state = MagicMock()
 
     with (
         patch("asyncio.sleep", side_effect=[None, asyncio.CancelledError]),
         patch(
-            "custom_components.remote_boot_manager.switch._async_ping_host",
+            "custom_components.grub_os_selector.switch._async_ping_host",
             return_value=False,
         ) as mock_ping,
     ):

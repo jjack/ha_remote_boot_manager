@@ -1,5 +1,5 @@
 {
-    "name": "jjack/ha-remote-boot-manager",
+    "name": "jjack/ha-grub-os-selector",
     "image": "mcr.microsoft.com/devcontainers/python:3.14",
     "postCreateCommand": "scripts/setup.sh",
     "forwardPorts": [

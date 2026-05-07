@@ -2,22 +2,22 @@
     "config": {
         "step": {
             "user": {
-                "title": "Configure Remote Boot Manager",
+                "title": "Configure Grub OS Selector",
                 "description": "If you need help with the configuration have a look here: {documentation_url}\n\nA secure, random Webhook ID will be automatically generated for you in the next step to protect your system from unauthorized access.",
                 "data": {}
             },
             "webhook_info": {
                 "title": "Generated Webhook ID",
-                "description": "Here is your securely generated Webhook ID. **Please copy this now as it will not be shown again.**\n\n```text\n{webhook_id}\n```\n\nFor full instructions on configuring and installing the agent, visit the [Remote Boot Agent]({agent_url}) repository."
+                "description": "Here is your securely generated Webhook ID. **Please copy this now as it will not be shown again.**\n\n```text\n{webhook_id}\n```\n\nFor full instructions on configuring and installing the Grub OS Reporter, visit the [Grub OS Reporter]({agent_url}) repository."
             },
             "reconfigure": {
-                "title": "Reconfigure Remote Boot Manager",
-                "description": "**Warning:** Regenerating the webhook ID will break the connection with your existing agents until they are updated with the new ID.",
+                "title": "Reconfigure Grub OS Selector",
+                "description": "**Warning:** Regenerating the webhook ID will break the connection with your existing Grub OS Reporters until they are updated with the new ID.",
                 "data": {}
             },
             "reconfigure_webhook_info": {
                 "title": "New Webhook ID",
-                "description": "Here is your securely generated new Webhook ID. **Please copy this now as it will not be shown again.**\n\n```text\n{webhook_id}\n```\n\nRemember to update all your Remote Boot Agents with this new ID.\n\nFor full instructions on configuring and installing the agent, visit the [Remote Boot Agent]({agent_url}) repository."
+                "description": "Here is your securely generated new Webhook ID. **Please copy this now as it will not be shown again.**\n\n```text\n{webhook_id}\n```\n\nRemember to update all your Grub OS Reporters with this new ID.\n\nFor full instructions on configuring and installing the Grub OS Reporter, visit the [Grub OS Reporter]({agent_url}) repository."
             }
         },
         "error": {
@@ -35,7 +35,7 @@
             },
             "host_config": {
                 "title": "Configure {host_name}",
-                "description": "Select a script to gracefully shut down the remote host. \n\n**Note:** You can also manually adjust the `address`, `broadcast_address`, and `broadcast_port` below for testing or troubleshooting purposes, but these changes are only temporary and will be automatically overwritten the next time the Remote Boot Agent checks in!",
+                "description": "Select a script to gracefully shut down the remote host. \n\n**Note:** You can also manually adjust the `address`, `broadcast_address`, and `broadcast_port` below for testing or troubleshooting purposes, but these changes are only temporary and will be automatically overwritten the next time the Grub OS Reporter checks in!",
                 "data": {
                     "turn_off_script": "Shutdown Script (Optional)",
                     "address": "Address for Ping Checks",
@@ -43,14 +43,14 @@
                     "broadcast_port": "Broadcast Port for Magic Packets"
                 },
                 "data_description": {
-                    "turn_off_script": "Path to a script that will be executed when the agent checks in. This script should gracefully shut down the remote host. If left blank, the host will simply be marked as 'off' without executing any commands.",
+                    "turn_off_script": "Path to a script that will be executed when the Grub OS Reporter checks in. This script should gracefully shut down the remote host. If left blank, the host will simply be marked as 'off' without executing any commands.",
                     "address": "The network address that HA will ping to check to see if the host is online. This can be an IP address or hostname. If left blank, there will not be any ping checks.",
                     "broadcast_address": "The IP address to send magic packets to. Defaults to `255.255.255.255` (`ff02::1` for ipv6) and is typically not changed.",
                     "broadcast_port": "The port to send magic packets to. Defaults to `9` and is typically not changed."
                 }
             },
             "error": {
-                "no_hosts": "No hosts found. Please make sure your Remote Boot Agent is properly configured and has checked in at least once before trying to configure options."
+                "no_hosts": "No hosts found. Please make sure your Grub OS Reporter is properly configured and has checked in at least once before trying to configure options."
             }
         }
     },

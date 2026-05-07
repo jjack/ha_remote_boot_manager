@@ -5,7 +5,7 @@
       "extra-files": [
         {
           "type": "json",
-          "path": "custom_components/remote_boot_manager/manifest.json",
+          "path": "custom_components/grub_os_selector/manifest.json",
           "jsonpath": "$.version"
         }
       ]
