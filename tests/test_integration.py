@@ -34,9 +34,7 @@ async def setup_integration(hass: HomeAssistant, hass_client, mock_config_entry)
     assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
     await hass.async_block_till_done()
 
-    client = await hass_client()
-
-    return client
+    return await hass_client()
 
 
 @pytest.fixture
