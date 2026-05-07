@@ -26,16 +26,15 @@ def mock_config_entry():
 @pytest.fixture
 async def setup_integration(hass: HomeAssistant, hass_client, mock_config_entry):
     """Set up the integration and return the web client."""
-    assert await async_setup_component(hass, "homeassistant", {})
-    assert await async_setup_component(hass, "http", {})
-    assert await async_setup_component(hass, "webhook", {})
+    mock_config_entry.add_to_hass(hass)
+
+    await async_setup_component(hass, "homeassistant", {})
+    await async_setup_component(hass, "http", {})
+    await async_setup_component(hass, "webhook", {})
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
     await hass.async_block_till_done()
 
     client = await hass_client()
-
-    mock_config_entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
-    await hass.async_block_till_done()
 
     return client
 
