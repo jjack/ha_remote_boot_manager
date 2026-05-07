@@ -12,7 +12,7 @@ Manage and automate the booting of your remote bare-metal hosts in Home Assistan
 * **Dynamic OS Discovery**: Hosts automatically report their available OS list (e.g., Ubuntu, Windows) to Home Assistant. (requires `remote-boot-agent` to be installed on the host)
 * **Next Boot Selection**: Change the next boot OS via a dropdown `select` entity.
 * **Wake-on-LAN & Power Status**: Sends magic packets to wake hosts and tracks power state via ping.
-* **Bootloader Endpoint**: Exposes a smart endpoint for GRUB (or other bootloaders) to fetch the selected OS and automatically reset state to prevent boot loops.
+* **GRUB Endpoint**: Exposes a smart endpoint for GRUB to fetch the selected OS and automatically reset state to prevent boot loops.
 * **Secure Webhooks**: Uses auto-generated, secure webhooks for agent-to-HA communication.
 
 
@@ -47,7 +47,7 @@ For this integration to work, you must install a bare-metal GO agent on **every*
 ### Basic Agent Setup:
 1. Download the latest [remote-boot-agent](https://github.com/jjack/remote-boot-agent/releases/latest).
 2. Install the agent on your target host.
-3. Run `remote-boot-agent setup` to auto-detect as much of the configurationa as possible (bootloader, initsystem, network info, etc.) and configure it with your bootloader and init system. This uses the `webhook_id` you saved during the integration setup.
+3. Run `remote-boot-agent setup` to auto-detect as much of the configuration as possible (GRUB, init system, network info, etc.) and configure it with GRUB and your init system. This uses the `webhook_id` you saved during the integration setup.
 4. Run the agent manually with `remote-boot-agent options push`. It will automatically ping Home Assistant, and your host will instantly appear as a new Device!
 
 *(For detailed installation instructions, see the remote-boot-agent repository).*
@@ -71,10 +71,10 @@ If you suspect your Webhook ID has been compromised, you can securely regenerate
 ### API Endpoints
 This integration exposes two primary endpoints for managing remote hosts:
 * **Agent Webhook Endpoint** (`/api/webhook/{webhook_id}`): Used by the `remote-boot-agent` to securely push OS lists, network states, and metadata to Home Assistant.
-* **Bootloader Endpoint** (`/api/remote_boot_manager/bootloader/{mac_address}`): A smart endpoint queried by GRUB (or other bootloaders) at startup to determine the next boot option.
+* **GRUB Endpoint** (`/api/remote_boot_manager/{mac_address}`): A smart endpoint queried by GRUB at startup to determine the next boot option.
 
 ## Tips & Hints
 
-* **Testing Bootloaders**: The bootloader endpoint is read-only by default so you can safely test it. To actually consume the next boot option, append `?token=YOUR_WEBHOOK_ID` to the request URL.
+* **Testing GRUB**: The GRUB endpoint is read-only by default so you can safely test it. To actually consume the next boot option, append `?token=YOUR_WEBHOOK_ID` to the request URL.
 * **IP address or hostname changes**: If a host's IP address or hostname changes, the integration will attempt to update the Device Registry automatically. If you need to remove an old host, you can do so directly from the Home Assistant UI via the device page.
 * **Testing Network Configurations**: You can manually adjust a host's `address`, `broadcast_address`, and `broadcast_port` via the **Configure** button (Options Flow). Note that these changes are temporary and will be automatically overwritten by the agent on its next check-in. They should only be used for testing or troubleshooting (e.g. if you are dealing with complex subnets or VLANs).

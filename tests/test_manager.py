@@ -35,7 +35,6 @@ async def test_async_process_webhook_payload_new_host(manager, hass):
     payload = {
         "address": "test.local",
         "name": "test-host",
-        "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
         "broadcast_address": "192.168.1.255",
         "broadcast_port": 9,
@@ -64,7 +63,6 @@ async def test_async_process_webhook_payload_none_option_already_present(manager
     payload = {
         "address": "test.local",
         "name": "test-host",
-        "bootloader": "grub",
         "boot_options": [DEFAULT_BOOT_OPTION_NONE, "ubuntu", "windows"],
     }
 
@@ -81,14 +79,12 @@ async def test_async_process_webhook_payload_update_existing_host(manager, hass)
         mac="00:11:22:33:44:55",
         address="old-hostname.local",
         name="old-hostname",
-        bootloader="grub",
         boot_options=["ubuntu"],
     )
 
     payload = {
         "address": "new-hostname.local",
         "name": "new-hostname",
-        "bootloader": "grub",
         "boot_options": ["ubuntu", "arch"],
         "broadcast_address": "10.0.0.255",
         "broadcast_port": 7,
@@ -122,7 +118,6 @@ async def test_async_set_and_consume_next_boot_option(manager, hass):
         mac="00:11:22:33:44:55",
         address="test.local",
         name="test-host",
-        bootloader="grub",
         boot_options=[DEFAULT_BOOT_OPTION_NONE, "ubuntu", "windows"],
     )
 
@@ -234,14 +229,12 @@ async def test_async_process_webhook_payload_update_no_rename(manager, hass):
         mac="00:11:22:33:44:55",
         address="same-hostname.local",
         name="same-hostname",
-        bootloader="grub",
         boot_options=["ubuntu"],
     )
 
     payload = {
         "address": "same-hostname.local",
         "name": "same-hostname",  # name is the same
-        "bootloader": "refind",  # bootloader changed
         "boot_options": ["ubuntu", "arch"],
     }
 
@@ -252,7 +245,6 @@ async def test_async_process_webhook_payload_update_no_rename(manager, hass):
         manager.async_process_webhook_payload("00:11:22:33:44:55", payload)
 
         host = manager.hosts["00:11:22:33:44:55"]
-        assert host.bootloader == "refind"
         assert host.boot_options == [DEFAULT_BOOT_OPTION_NONE, "ubuntu", "arch"]
 
         # Verify device registry was NOT updated
@@ -324,7 +316,6 @@ async def test_async_remove_host(manager, hass):
         mac="00:11:22:33:44:55",
         address="test.local",
         name="test-host",
-        bootloader="grub",
     )
 
     manager.async_remove_host("00:11:22:33:44:55")

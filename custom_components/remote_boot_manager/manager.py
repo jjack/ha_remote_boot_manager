@@ -36,7 +36,6 @@ class RemoteHost:
     mac: str
     name: str
     address: str | None = None
-    bootloader: str | None = None
     boot_options: list[str] = field(default_factory=list)
     broadcast_address: str | None = None
     broadcast_port: int | None = None
@@ -51,7 +50,6 @@ class RemoteHost:
         """Safely update the host state from incoming webhook data."""
         self.name = payload.get("name", self.name)
         self.address = payload.get(CONF_ADDRESS, self.address)
-        self.bootloader = payload.get("bootloader", self.bootloader)
         self.boot_options = payload.get("boot_options", self.boot_options) or []
         self.broadcast_address = payload.get(
             CONF_BROADCAST_ADDRESS, self.broadcast_address
@@ -127,7 +125,6 @@ class RemoteBootManager:
                 mac=mac_address,
                 name=payload["name"],
                 address=payload.get(CONF_ADDRESS),
-                bootloader=payload.get("bootloader"),
                 boot_options=payload.get("boot_options") or [],
                 broadcast_address=payload.get(CONF_BROADCAST_ADDRESS),
                 broadcast_port=payload.get(CONF_BROADCAST_PORT),

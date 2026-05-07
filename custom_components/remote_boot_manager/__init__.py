@@ -26,7 +26,7 @@ from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, LOGGER, WEBHOOK_NAME
 from .manager import RemoteBootManager
-from .views import BootloaderView
+from .views import GrubConfigView
 from .webhook import async_validate_webhook_payload
 
 if TYPE_CHECKING:
@@ -82,9 +82,9 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:  # n
         schema=WAKE_ON_LAN_SEND_MAGIC_PACKET_SCHEMA,
     )
 
-    # Register the unauthenticated bootloader get request view
-    # (ie - GET /api/remote_boot_manager/bootloader/{mac_address})   # noqa: ERA001
-    hass.http.register_view(BootloaderView())
+    # Register the unauthenticated GRUB get request view
+    # (ie - GET /api/remote_boot_manager/{mac_address})   # noqa: ERA001
+    hass.http.register_view(GrubConfigView())
 
     return True
 

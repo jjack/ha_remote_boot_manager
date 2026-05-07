@@ -65,13 +65,12 @@ async def test_validate_webhook_valid_payload():
         "mac": "00:11:22:33:44:55",
         "address": "test.local",
         "name": "test",
-        "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
         "broadcast_address": "192.168.1.255",
         "broadcast_port": 9,
     }
     request.text = AsyncMock(
-        return_value='{"mac": "00:11:22:33:44:55", "address": "test.local", "name": "test", "bootloader": "grub", "boot_options": ["ubuntu", "windows"], "broadcast_address": "192.168.1.255", "broadcast_port": 9}'
+        return_value='{"mac": "00:11:22:33:44:55", "address": "test.local", "name": "test", "boot_options": ["ubuntu", "windows"], "broadcast_address": "192.168.1.255", "broadcast_port": 9}'
     )
     request.json = AsyncMock(return_value=valid_data)
 
@@ -81,7 +80,6 @@ async def test_validate_webhook_valid_payload():
     assert payload["mac"] == "00:11:22:33:44:55"
     assert payload["address"] == "test.local"
     assert payload["name"] == "test"
-    assert payload["bootloader"] == "grub"
     assert payload["boot_options"] == ["ubuntu", "windows"]
     assert payload["broadcast_address"] == "192.168.1.255"
     assert payload["broadcast_port"] == 9
@@ -94,11 +92,10 @@ async def test_validate_webhook_empty_name_uses_address():
         "mac": "00:11:22:33:44:55",
         "address": "test.local",
         "name": "",
-        "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
     }
     request.text = AsyncMock(
-        return_value='{"mac": "00:11:22:33:44:55", "address": "test.local", "name": "", "bootloader": "grub", "boot_options": ["ubuntu", "windows"]}'
+        return_value='{"mac": "00:11:22:33:44:55", "address": "test.local", "name": "", "boot_options": ["ubuntu", "windows"]}'
     )
     request.json = AsyncMock(return_value=valid_data)
 
@@ -111,7 +108,7 @@ async def test_validate_webhook_empty_name_uses_address():
 
 async def test_validate_webhook_content_type_agnostic():
     """Test validation works regardless of the Content-Type header."""
-    valid_json_text = '{"mac": "00:11:22:33:44:55", "address": "test.local", "name": "test", "bootloader": "grub", "boot_options": ["ubuntu"]}'
+    valid_json_text = '{"mac": "00:11:22:33:44:55", "address": "test.local", "name": "test", "boot_options": ["ubuntu"]}'
 
     request_with_header = MagicMock(spec=web.Request)
     request_with_header.headers = {"Content-Type": "application/json"}
@@ -132,4 +129,3 @@ async def test_validate_webhook_content_type_agnostic():
         assert response is None
         assert payload is not None
         assert payload["mac"] == "00:11:22:33:44:55"
-        assert payload["bootloader"] == "grub"

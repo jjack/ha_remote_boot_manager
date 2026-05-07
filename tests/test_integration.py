@@ -49,7 +49,6 @@ async def discovered_client(hass: HomeAssistant, setup_integration):
         "mac": "aa:bb:cc:dd:ee:ff",
         "address": "test.local",
         "name": "test-host",
-        "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
     }
     resp = await client.post(webhook_url, json=payload)
@@ -66,7 +65,6 @@ async def test_webhook_discovery(hass: HomeAssistant, setup_integration) -> None
         "mac": "aa:bb:cc:dd:ee:ff",
         "address": "test.local",
         "name": "test-host",
-        "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
     }
 
@@ -95,7 +93,6 @@ async def test_minimal_webhook_discovery_and_switch(
         "mac": "de:ad:be:ef:00:01",
         "address": "minimal.local",
         "name": "minimal-host",
-        "bootloader": "grub",
         "boot_options": ["ubuntu"],
     }
 
@@ -126,10 +123,10 @@ async def test_minimal_webhook_discovery_and_switch(
         mock_wake.assert_called_once_with("de:ad:be:ef:00:01")
 
 
-async def test_select_and_bootloader_view(
+async def test_select_and_grub_config_view(
     hass: HomeAssistant, discovered_client
 ) -> None:
-    """Test selecting a boot option and retrieving the bootloader view."""
+    """Test selecting a boot option and retrieving the GRUB config view."""
     client = discovered_client
     entity_id_select = "select.test_host_next_boot_option"
 
@@ -147,7 +144,7 @@ async def test_select_and_bootloader_view(
     resp = await client.get("/api/remote_boot_manager/aa:bb:cc:dd:ee:ff")
     assert resp.status == HTTPStatus.OK
     text = await resp.text()
-    assert 'grub-reboot "ubuntu"' in text or "ubuntu" in text
+    assert "set default='ubuntu'" in text
 
 
 async def test_switch_turn_on_does_not_reset_boot_option(
@@ -287,7 +284,6 @@ async def test_webhook_internal_server_error(
         "mac": "aa:bb:cc:dd:ee:ff",
         "address": "test.local",
         "name": "test-host",
-        "bootloader": "grub",
         "boot_options": ["ubuntu", "windows"],
     }
 
