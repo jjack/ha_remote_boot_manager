@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 from aiohttp import web
 from homeassistant.core import HomeAssistant
 
+from custom_components.grub_os_selector.const import DEFAULT_BOOT_OPTION_NONE
 from custom_components.grub_os_selector.manager import RemoteHost
 from custom_components.grub_os_selector.views import GrubConfigView
 
@@ -90,6 +91,36 @@ async def test_grub_config_view_success(hass: HomeAssistant) -> None:
     resp = await view.get(mock_request, "aa:bb:cc:dd:ee:ff")
     assert resp.status == HTTPStatus.OK
     assert resp.text == "set default='windows'\n"
+    mock_manager.async_consume_next_boot_option.assert_called_once_with(
+        "aa:bb:cc:dd:ee:ff"
+    )
+
+
+async def test_grub_config_view_success_empty(hass: HomeAssistant) -> None:
+    """Test successful request strictly consumes state and returns empty string."""
+    mock_request = MagicMock(spec=web.Request)
+    mock_request.app = {"hass": hass}
+
+    mock_entry = MagicMock()
+    hass.config_entries.async_entries = MagicMock(return_value=[mock_entry])
+
+    mock_manager = MagicMock()
+    mock_manager.hosts = {
+        "aa:bb:cc:dd:ee:ff": RemoteHost(
+            mac="aa:bb:cc:dd:ee:ff",
+            address="test.local",
+            name="test",
+            next_boot_option=DEFAULT_BOOT_OPTION_NONE,
+        )
+    }
+    mock_manager.async_consume_next_boot_option.return_value = DEFAULT_BOOT_OPTION_NONE
+
+    mock_entry.runtime_data = mock_manager
+    view = GrubConfigView()
+
+    resp = await view.get(mock_request, "aa:bb:cc:dd:ee:ff")
+    assert resp.status == HTTPStatus.OK
+    assert resp.text == ""
     mock_manager.async_consume_next_boot_option.assert_called_once_with(
         "aa:bb:cc:dd:ee:ff"
     )
