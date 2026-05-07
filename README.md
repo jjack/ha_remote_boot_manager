@@ -1,10 +1,10 @@
 # Grub OS Selector for Home Assistant
 
-![GitHub](https://img.shields.io/github/license/jjack/hass-grub-os-selector)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/jjack/hass-grub-os-selector)
-[![Python and Coverage](https://github.com/jjack/hass-grub-os-selector/actions/workflows/test.yml/badge.svg)](https://github.com/jjack/hass-grub-os-selector/actions/workflows/test.yml)
-[![CodeQL](https://github.com/jjack/hass-grub-os-selector/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/jjack/hass-grub-os-selector/actions/workflows/github-code-scanning/codeql)
-[![Codecov branch](https://img.shields.io/codecov/c/github/jjack/hass-grub-os-selector)](https://app.codecov.io/gh/jjack/hass-grub-os-selector)
+![GitHub](https://img.shields.io/github/license/jjack/ha-grub-os-selector)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/jjack/ha-grub-os-selector)
+[![Python and Coverage](https://github.com/jjack/ha-grub-os-selector/actions/workflows/test.yml/badge.svg)](https://github.com/jjack/ha-grub-os-selector/actions/workflows/test.yml)
+[![CodeQL](https://github.com/jjack/ha-grub-os-selector/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/jjack/ha-grub-os-selector/actions/workflows/github-code-scanning/codeql)
+[![Codecov branch](https://img.shields.io/codecov/c/github/jjack/ha-grub-os-selector)](https://app.codecov.io/gh/jjack/ha-grub-os-selector)
 
 Manage and automate the booting of your remote bare-metal hosts in Home Assistant.
 
@@ -27,7 +27,7 @@ This integration creates a new Home Assistant Device for each host discovered by
 1. Open HACS in Home Assistant.
 2. Go to **Integrations**.
 3. Click the 3 dots in the top right -> **Custom repositories**.
-4. Add `jjack/hass-grub-os-selector` as an Integration.
+4. Add `jjack/ha-grub-os-selector` as an Integration.
 5. Download it and restart Home Assistant.
 
 ### Manual Installation
