@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from homeassistant import config_entries
@@ -17,6 +18,9 @@ from homeassistant.helpers import selector
 from homeassistant.loader import async_get_loaded_integration
 
 from .const import DOMAIN, GRUB_OS_REPORTER_URL
+
+if TYPE_CHECKING:
+    from .data import GrubOSSelectManagerConfigEntry
 
 
 class GrubOSSelectManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -38,7 +42,7 @@ class GrubOSSelectManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self,
-        user_input: dict | None = None,
+        user_input: dict[str, Any] | None = None,
     ) -> config_entries.ConfigFlowResult:
         """Handle a flow initialized by the user."""
         if self._async_current_entries():
@@ -65,7 +69,7 @@ class GrubOSSelectManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_webhook_info(
         self,
-        user_input: dict | None = None,
+        user_input: dict[str, Any] | None = None,
     ) -> config_entries.ConfigFlowResult:
         """Show the generated webhook ID to the user."""
         if user_input is not None:
@@ -86,7 +90,7 @@ class GrubOSSelectManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_reconfigure(
         self,
-        user_input: dict | None = None,
+        user_input: dict[str, Any] | None = None,
     ) -> config_entries.ConfigFlowResult:
         """Handle a reconfiguration flow initialized by the user."""
         if user_input is not None:
@@ -102,7 +106,7 @@ class GrubOSSelectManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_reconfigure_webhook_info(
         self,
-        user_input: dict | None = None,
+        user_input: dict[str, Any] | None = None,
     ) -> config_entries.ConfigFlowResult:
         """Show the new webhook ID to the user."""
         if user_input is not None:
@@ -126,13 +130,13 @@ class GrubOSSelectManagerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 class GrubOSSelectManagerOptionsFlow(config_entries.OptionsFlow):
     """Options flow for Grub OS Selector."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+    def __init__(self, config_entry: GrubOSSelectManagerConfigEntry) -> None:
         """Initialize options flow."""
         self._config_entry = config_entry
         self.selected_mac: str | None = None
 
     async def async_step_init(
-        self, user_input: dict | None = None
+        self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Manage the options."""
         manager = self._config_entry.runtime_data
@@ -155,7 +159,7 @@ class GrubOSSelectManagerOptionsFlow(config_entries.OptionsFlow):
         )
 
     async def async_step_host_config(
-        self, user_input: dict | None = None
+        self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Configure specific host."""
         manager = self._config_entry.runtime_data

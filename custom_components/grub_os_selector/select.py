@@ -15,16 +15,16 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from .const import DEFAULT_BOOT_OPTION_NONE, DOMAIN, LOGGER, SIGNAL_NEW_HOST
 
 if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+    from .data import GrubOSSelectManagerConfigEntry
     from .manager import GrubOSSelectManager
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: GrubOSSelectManagerConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the select platform."""

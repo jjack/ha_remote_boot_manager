@@ -43,8 +43,8 @@ class RemoteHost:
     # this comes from the UI, not the webhook
     next_boot_option: str = DEFAULT_BOOT_OPTION_NONE
 
-    # this comes from the YAML config for wake_on_lan backwards compatibility
-    off_action: list[Any] | None = None
+    # this also comes from the UI
+    off_action: list[dict[str, Any]] | None = None
 
     def update_from_payload(self, payload: dict[str, Any]) -> None:
         """Safely update the host state from incoming webhook data."""
