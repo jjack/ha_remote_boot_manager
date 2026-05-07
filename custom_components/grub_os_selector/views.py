@@ -59,6 +59,8 @@ class GrubConfigView(HomeAssistantView):
             next_boot_option = manager.async_consume_next_boot_option(mac_address)
 
             if next_boot_option != DEFAULT_BOOT_OPTION_NONE:
+                # Escape single quotes to prevent GRUB command injection or syntax
+                # errors that could break the boot sequence.
                 safe_option = next_boot_option.replace("'", "\\'")
                 content = f"set default='{safe_option}'\n"
             else:

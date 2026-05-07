@@ -182,6 +182,8 @@ class GrubOSSelectManagerSwitch(SwitchEntity):
                 # loop.
                 return
 
+        # The timeout was reached without the host changing power states;
+        # revert the optimistic UI switch state to reflect the failure.
         self._attr_is_on = not target_state
         if self.hass is not None:
             self.async_write_ha_state()
