@@ -16,5 +16,5 @@ av
 ha-ffmpeg
 hassil
 home-assistant-frontend
-pymicro-vad==1.0.1
+pymicro-vad==2.0.1
 PyTurboJPEG==1.8.3
